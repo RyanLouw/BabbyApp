@@ -154,6 +154,25 @@ If Android logs `The email address is badly formatted`, Firebase was reached but
 
 Official reference: [Get started with Cloud Firestore](https://firebase.google.com/docs/firestore/quickstart).
 
+### Fix `PERMISSION_DENIED: Missing or insufficient permissions`
+
+Successful Firebase Authentication followed by a denied `users/{uid}` listen means the app connected and signed in, but the Firestore database is still using rules that do not allow the request—usually the default production-mode rules. It does **not** mean the user document must be manually created.
+
+From the directory containing `firebase.json`, deploy the repository rules to the same Firebase project used by `android/app/google-services.json`:
+
+```bat
+cd /d C:\dev\BabbyApp\untitled
+firebase login
+firebase use
+firebase deploy --only firestore:rules,firestore:indexes
+```
+
+If `firebase use` does not show the correct Firebase project ID, run `firebase use --add`, select the project referenced by the `project_id` field in `android/app/google-services.json`, and deploy again. In **Firebase Console → Firestore Database → Rules**, confirm the published rules include `match /users/{uid}` and then fully restart the app.
+
+### Sign-in persistence
+
+Firebase Authentication persists the Android user session automatically. The app router listens to `authStateChanges()`: it opens **Home** for an existing session, redirects signed-out users to **Login**, and only forgets the session after the user selects **Logout**. There is no separate “Remember me” checkbox because remembering the authenticated user is the safe default on Android.
+
 ### Installing `flutterfire` on Windows (multi-platform configuration)
 
 `flutterfire` is a separate CLI; installing the Flutter SDK does not install it. In PowerShell, run:

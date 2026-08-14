@@ -16,7 +16,7 @@ class HomeScreen extends ConsumerWidget {
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
-      error: (_, __) => const _LoadError(),
+      error: (error, _) => _LoadError(error: error),
       data: (id) {
         if (id == null) return const CreateFamilyScreen();
         return _FamilyHome(familyId: id);
@@ -48,7 +48,7 @@ class _FamilyHome extends ConsumerWidget {
       ),
       body: babies.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => const _LoadError(),
+        error: (error, _) => _LoadError(error: error),
         data: (items) => items.isEmpty
             ? const _NoBabies()
             : ListView(
@@ -174,15 +174,27 @@ class _NoBabies extends StatelessWidget {
 }
 
 class _LoadError extends StatelessWidget {
-  const _LoadError();
+  const _LoadError({required this.error});
+
+  final Object error;
 
   @override
-  Widget build(BuildContext context) => const Scaffold(
-        body: Center(
-          child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Text('We could not load your family. Please try again.'),
+  Widget build(BuildContext context) {
+    final permissionDenied = error.toString().contains('permission-denied') ||
+        error.toString().contains('PERMISSION_DENIED');
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            permissionDenied
+                ? 'Firebase access is not configured yet. Ask the family owner '
+                    'to deploy the Firestore security rules, then try again.'
+                : 'We could not load your family. Please try again.',
+            textAlign: TextAlign.center,
           ),
         ),
-      );
+      ),
+    );
+  }
 }
