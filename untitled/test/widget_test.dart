@@ -3,6 +3,8 @@ import 'package:babby_care/features/auth/presentation/auth_screen.dart';
 import 'package:babby_care/core/providers.dart';
 import 'package:babby_care/features/babies/domain/baby.dart';
 import 'package:babby_care/features/events/domain/baby_event.dart';
+import 'package:babby_care/features/events/domain/event_repository.dart';
+import 'package:babby_care/features/history/presentation/history_screen.dart';
 import 'package:babby_care/features/home/presentation/home_screen.dart';
 import 'package:babby_care/features/statistics/presentation/statistics_screen.dart';
 import 'package:flutter/material.dart';
@@ -113,6 +115,46 @@ void main() {
     expect(find.text('Create family'), findsOneWidget);
   });
 
+  testWidgets('history merges baby subcollections without collection group', (
+    tester,
+  ) async {
+    final now = DateTime(2026);
+    final baby = Baby(
+      id: 'a',
+      familyId: 'f',
+      name: 'Amelia',
+      dateOfBirth: now,
+      createdAt: now,
+      createdBy: 'u',
+    );
+    final feed = BabyEvent(
+      id: 'feed',
+      familyId: 'f',
+      babyId: 'a',
+      type: BabyEventType.feeding,
+      start: now,
+      createdAt: now,
+      createdBy: 'u',
+      updatedAt: now,
+      updatedBy: 'u',
+      data: const {'amountMl': 120, 'milkType': 'formula'},
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          currentFamilyIdProvider.overrideWith((ref) => Stream.value('f')),
+          babiesProvider('f').overrideWith((ref) => Stream.value([baby])),
+          eventRepositoryProvider.overrideWithValue(_EventRepository([feed])),
+        ],
+        child: const MaterialApp(home: HistoryScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('120 ml'), findsOneWidget);
+    expect(find.textContaining('Amelia'), findsOneWidget);
+  });
+
   testWidgets('statistics period can be changed', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: StatisticsScreen()));
 
@@ -141,4 +183,31 @@ void main() {
       findsOneWidget,
     );
   });
+}
+
+class _EventRepository implements BabyEventRepository {
+  _EventRepository(this.events);
+
+  final List<BabyEvent> events;
+
+  @override
+  Stream<List<BabyEvent>> watchEvents({
+    required String familyId,
+    String? babyId,
+  }) => Stream.value(
+    events.where((event) => event.babyId == babyId).toList(),
+  );
+
+  @override
+  Future<void> createEvent(BabyEvent event) async {}
+
+  @override
+  Future<void> updateEvent(BabyEvent event) async {}
+
+  @override
+  Future<void> deleteEvent({
+    required String familyId,
+    required String babyId,
+    required String eventId,
+  }) async {}
 }

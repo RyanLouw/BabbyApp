@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 
 import '../features/auth/presentation/auth_screen.dart';
 import '../features/auth/domain/auth_redirect.dart';
-import '../features/events/presentation/record_event_sheet.dart';
 import '../features/history/presentation/history_screen.dart';
 import '../features/home/presentation/home_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
@@ -83,16 +82,6 @@ class AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: shell,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showModalBottomSheet<void>(
-          context: context,
-          showDragHandle: true,
-          builder: (_) => const RecordEventSheet(),
-        ),
-        icon: const Icon(Icons.add),
-        label: const Text('Record'),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: NavigationBar(
         selectedIndex: shell.currentIndex,
         onDestinationSelected: shell.goBranch,

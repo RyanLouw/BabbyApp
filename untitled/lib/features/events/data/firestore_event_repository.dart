@@ -9,9 +9,7 @@ class FirestoreBabyEventRepository implements BabyEventRepository {
   @override
   Stream<List<BabyEvent>> watchEvents({required String familyId, String? babyId}) {
     if (babyId == null) {
-      return db.collectionGroup('events').where('familyId', isEqualTo: familyId)
-        .orderBy('startDateTime', descending: true).snapshots(includeMetadataChanges: true)
-        .map((s) => s.docs.map((d) => BabyEvent.fromFirestore(d.id, d.data())).toList());
+      throw ArgumentError('babyId is required for family-scoped event reads.');
     }
     return _events(familyId, babyId).orderBy('startDateTime', descending: true).snapshots(includeMetadataChanges: true)
       .map((s) => s.docs.map((d) => BabyEvent.fromFirestore(d.id, d.data())).toList());

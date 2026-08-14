@@ -255,4 +255,4 @@ firebase deploy --only firestore:rules,firestore:indexes
 
 Firestore disk persistence is explicitly enabled with an unlimited cache. Writes therefore complete against the local cache while offline and sync when connectivity returns. Documents store UTC Firestore timestamps and use `updatedAt`/`updatedBy` for deliberately simple last-write-wins conflict handling.
 
-The collection-group history query requires the included `familyId ASC, startDateTime DESC` index. Security rules independently validate family membership and parent baby identity rather than trusting client paths or fields.
+History intentionally listens to each known baby's `events` subcollection and merges the results on-device. It does not use a cross-family collection-group query. This aligns the query path with the membership rules, works from Firestore's local cache, and prevents a valid family member from receiving `PERMISSION_DENIED` when opening History. New writes appear through the same snapshot streams without manually refreshing the page.
