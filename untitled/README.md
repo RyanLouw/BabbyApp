@@ -130,6 +130,8 @@ No user needs to be created manually: the app's registration screen calls Fireba
 
 Official reference: [Firebase email/password authentication for Flutter](https://firebase.google.com/docs/auth/flutter/password-auth).
 
+If Android logs `The email address is badly formatted`, Firebase was reached but rejected the submitted value. Enter a complete email such as `ryan@example.com` in **Email address**; enter `Ryan` in the separate **Your name** field. A Firebase connection or provider-configuration failure uses a different error code, such as `network-request-failed` or `operation-not-allowed`. The app validates these fields before submitting and shows a user-friendly message instead of exposing the Firebase log.
+
 ### Create the Cloud Firestore database
 
 1. In the same Firebase project, select **Build → Firestore Database**.
