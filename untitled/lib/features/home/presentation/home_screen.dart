@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../core/providers.dart';
 import '../../babies/domain/baby.dart';
 import '../../events/presentation/record_event_sheet.dart';
+import '../../events/domain/baby_event.dart';
 import '../../family/presentation/create_family_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -86,14 +88,22 @@ class _FamilyHome extends ConsumerWidget {
   }
 }
 
-class _BabyCard extends StatelessWidget {
+class _BabyCard extends ConsumerWidget {
   const _BabyCard({required this.baby, required this.width});
 
   final Baby baby;
   final double width;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final events = ref.watch(babyEventsProvider((
+      familyId: baby.familyId,
+      babyId: baby.id,
+    )));
+    final items = events.value ?? const <BabyEvent>[];
+    final lastFeed = _firstOfType(items, BabyEventType.feeding);
+    final lastNappy = _firstOfType(items, BabyEventType.nappy);
+    final activeSleep = _activeSleep(items);
     return SizedBox(
       width: width,
       child: Card(
@@ -115,28 +125,40 @@ class _BabyCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 20),
-              const _EmptyStatus(Icons.local_drink_outlined, 'No feeds yet'),
-              const _EmptyStatus(Icons.bedtime_outlined, 'No sleep yet'),
-              const _EmptyStatus(
+              _Status(
+                Icons.local_drink_outlined,
+                lastFeed == null
+                    ? 'No feeds yet'
+                    : '${lastFeed.data['amountMl']} ml · ${_ago(lastFeed.start)}',
+              ),
+              _Status(
+                Icons.bedtime_outlined,
+                activeSleep == null
+                    ? 'Awake'
+                    : 'Sleeping · ${_duration(activeSleep.duration())}',
+              ),
+              _Status(
                 Icons.baby_changing_station,
-                'No nappies yet',
+                lastNappy == null
+                    ? 'No nappies yet'
+                    : '${_capitalized(lastNappy.data['kind'] as String?)} · ${_ago(lastNappy.start)}',
               ),
               const Divider(height: 28),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: ['Feed', 'Start sleep', 'Nappy']
-                    .map(
-                      (label) => FilledButton.tonal(
-                        onPressed: () => showModalBottomSheet<void>(
-                          context: context,
-                          showDragHandle: true,
-                          builder: (_) => const RecordEventSheet(),
-                        ),
-                        child: Text(label),
-                      ),
-                    )
-                    .toList(),
+                children: [
+                  _action(context, 'Feed', BabyEventType.feeding),
+                  if (activeSleep == null)
+                    _action(context, 'Start sleep', BabyEventType.sleep)
+                  else
+                    FilledButton.tonal(
+                      onPressed: () => _wakeUp(context, ref, activeSleep),
+                      child: const Text('Wake up'),
+                    ),
+                  _action(context, 'Nappy', BabyEventType.nappy),
+                  _action(context, 'Note', BabyEventType.note),
+                ],
               ),
             ],
           ),
@@ -144,10 +166,54 @@ class _BabyCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _action(BuildContext context, String label, BabyEventType type) {
+    return FilledButton.tonal(
+      onPressed: () => showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (_) => RecordEventSheet(
+          familyId: baby.familyId,
+          baby: baby,
+          initialType: type,
+        ),
+      ),
+      child: Text(label),
+    );
+  }
+
+  Future<void> _wakeUp(
+    BuildContext context,
+    WidgetRef ref,
+    BabyEvent sleep,
+  ) async {
+    final now = DateTime.now().toUtc();
+    final updated = BabyEvent(
+      id: sleep.id,
+      familyId: sleep.familyId,
+      babyId: sleep.babyId,
+      type: sleep.type,
+      start: sleep.start,
+      end: now,
+      createdAt: sleep.createdAt,
+      createdBy: sleep.createdBy,
+      updatedAt: now,
+      updatedBy: FirebaseAuth.instance.currentUser!.uid,
+      notes: sleep.notes,
+      data: sleep.data,
+    );
+    await ref.read(eventRepositoryProvider).updateEvent(updated);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${baby.name} woke up')),
+      );
+    }
+  }
 }
 
-class _EmptyStatus extends StatelessWidget {
-  const _EmptyStatus(this.icon, this.label);
+class _Status extends StatelessWidget {
+  const _Status(this.icon, this.label);
 
   final IconData icon;
   final String label;
@@ -197,4 +263,35 @@ class _LoadError extends StatelessWidget {
       ),
     );
   }
+}
+
+BabyEvent? _firstOfType(List<BabyEvent> events, BabyEventType type) {
+  for (final event in events) {
+    if (event.type == type) return event;
+  }
+  return null;
+}
+
+BabyEvent? _activeSleep(List<BabyEvent> events) {
+  for (final event in events) {
+    if (event.type == BabyEventType.sleep && event.end == null) return event;
+  }
+  return null;
+}
+
+String _ago(DateTime time) {
+  final elapsed = DateTime.now().difference(time.toLocal());
+  if (elapsed.inMinutes < 1) return 'just now';
+  if (elapsed.inHours < 1) return '${elapsed.inMinutes}m ago';
+  return '${elapsed.inHours}h ${elapsed.inMinutes.remainder(60)}m ago';
+}
+
+String _duration(Duration duration) {
+  if (duration.inHours < 1) return '${duration.inMinutes}m';
+  return '${duration.inHours}h ${duration.inMinutes.remainder(60)}m';
+}
+
+String _capitalized(String? value) {
+  if (value == null || value.isEmpty) return 'Nappy';
+  return '${value[0].toUpperCase()}${value.substring(1)}';
 }

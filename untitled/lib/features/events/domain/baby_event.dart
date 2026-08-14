@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum BabyEventType { feeding, sleep, nappy, pumping, note, medicine, temperature, bath, growth }
+enum BabyEventType { feeding, sleep, nappy, note, medicine, temperature, bath, growth }
 enum MilkType { formula, breastMilk, other }
 enum NappyType { wet, dirty, both }
 

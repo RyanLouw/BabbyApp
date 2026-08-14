@@ -2,6 +2,7 @@ import 'package:babby_care/features/events/presentation/record_event_sheet.dart'
 import 'package:babby_care/features/auth/presentation/auth_screen.dart';
 import 'package:babby_care/core/providers.dart';
 import 'package:babby_care/features/babies/domain/baby.dart';
+import 'package:babby_care/features/events/domain/baby_event.dart';
 import 'package:babby_care/features/home/presentation/home_screen.dart';
 import 'package:babby_care/features/statistics/presentation/statistics_screen.dart';
 import 'package:flutter/material.dart';
@@ -29,11 +30,29 @@ void main() {
         createdBy: 'u',
       ),
     ];
+    final feed = BabyEvent(
+      id: 'feed',
+      familyId: 'f',
+      babyId: 'a',
+      type: BabyEventType.feeding,
+      start: now,
+      createdAt: now,
+      createdBy: 'u',
+      updatedAt: now,
+      updatedBy: 'u',
+      data: const {'amountMl': 120, 'milkType': 'formula'},
+    );
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           currentFamilyIdProvider.overrideWith((ref) => Stream.value('f')),
           babiesProvider('f').overrideWith((ref) => Stream.value(babies)),
+          babyEventsProvider(
+            (familyId: 'f', babyId: 'a'),
+          ).overrideWith((ref) => Stream.value([feed])),
+          babyEventsProvider(
+            (familyId: 'f', babyId: 'b'),
+          ).overrideWith((ref) => Stream.value([])),
         ],
         child: const MaterialApp(home: HomeScreen()),
       ),
@@ -42,17 +61,39 @@ void main() {
 
     expect(find.text('Amelia'), findsOneWidget);
     expect(find.text('Benjamin'), findsOneWidget);
-    expect(find.text('No feeds yet'), findsNWidgets(2));
+    expect(find.textContaining('120 ml'), findsOneWidget);
+    expect(find.text('No feeds yet'), findsOneWidget);
   });
 
   testWidgets('quick entry exposes common events', (tester) async {
+    final now = DateTime(2026);
+    final baby = Baby(
+      id: 'a',
+      familyId: 'f',
+      name: 'Amelia',
+      dateOfBirth: now,
+      createdAt: now,
+      createdBy: 'u',
+    );
     await tester.pumpWidget(
-      const MaterialApp(home: Scaffold(body: RecordEventSheet())),
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: RecordEventSheet(familyId: 'f', baby: baby),
+          ),
+        ),
+      ),
     );
 
     expect(find.text('Feed'), findsOneWidget);
     expect(find.text('Sleep'), findsOneWidget);
     expect(find.text('Nappy'), findsOneWidget);
+    expect(find.text('Pump'), findsNothing);
+    await tester.tap(find.text('Feed'));
+    await tester.pump();
+    expect(find.text('Feed — Amelia'), findsOneWidget);
+    expect(find.text('Amount eaten'), findsOneWidget);
+    expect(find.textContaining('Time:'), findsOneWidget);
   });
 
   testWidgets('new family setup starts with two baby forms', (tester) async {
