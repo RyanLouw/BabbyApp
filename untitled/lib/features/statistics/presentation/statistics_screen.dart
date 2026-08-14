@@ -95,7 +95,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                   child: Padding(
                     padding: EdgeInsets.all(20),
                     child: Text(
-                      'Choose one baby above to see weight and height changes.',
+                      'Choose one baby above to see weight and length changes.',
                     ),
                   ),
                 )
@@ -197,14 +197,14 @@ class _GrowthSection extends StatelessWidget {
     final growth = events.where((event) => event.type == BabyEventType.growth).toList()
       ..sort((a, b) => a.start.compareTo(b.start));
     final weights = _points(growth, 'weightKg');
-    final heights = _points(growth, 'heightCm');
+    final lengths = _growthPoints(growth, 'lengthCm', legacyField: 'heightCm');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('${baby.name} growth', style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 12),
         _GrowthCard(title: 'Weight', unit: 'kg', points: weights),
-        _GrowthCard(title: 'Height', unit: 'cm', points: heights),
+        _GrowthCard(title: 'Length', unit: 'cm', points: lengths),
       ],
     );
   }
@@ -212,6 +212,16 @@ class _GrowthSection extends StatelessWidget {
 
 List<double> _points(List<BabyEvent> events, String field) => events
     .map((event) => event.data[field])
+    .whereType<num>()
+    .map((value) => value.toDouble())
+    .toList();
+
+List<double> _growthPoints(
+  List<BabyEvent> events,
+  String field, {
+  String? legacyField,
+}) => events
+    .map((event) => event.data[field] ?? event.data[legacyField])
     .whereType<num>()
     .map((value) => value.toDouble())
     .toList();

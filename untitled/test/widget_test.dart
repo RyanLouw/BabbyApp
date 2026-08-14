@@ -2,6 +2,7 @@ import 'package:babby_care/features/events/presentation/record_event_sheet.dart'
 import 'package:babby_care/features/auth/presentation/auth_screen.dart';
 import 'package:babby_care/core/providers.dart';
 import 'package:babby_care/features/babies/domain/baby.dart';
+import 'package:babby_care/features/babies/presentation/add_baby_sheet.dart';
 import 'package:babby_care/features/events/domain/baby_event.dart';
 import 'package:babby_care/features/events/domain/event_repository.dart';
 import 'package:babby_care/features/history/presentation/history_screen.dart';
@@ -113,6 +114,23 @@ void main() {
     expect(find.widgetWithText(TextFormField, 'Baby 1 name'), findsOneWidget);
     expect(find.widgetWithText(TextFormField, 'Baby 2 name'), findsOneWidget);
     expect(find.text('Create family'), findsOneWidget);
+  });
+
+  testWidgets('settings add-baby form captures name and birth date', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(body: AddBabySheet(familyId: 'family')),
+        ),
+      ),
+    );
+
+    expect(find.text('Add another baby'), findsOneWidget);
+    expect(find.text('Baby name'), findsOneWidget);
+    expect(find.textContaining('Born'), findsOneWidget);
+    expect(find.text('Add baby'), findsOneWidget);
   });
 
   testWidgets('history merges baby subcollections without collection group', (

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/app.dart';
 import '../../../core/providers.dart';
 import '../../babies/presentation/baby_details_screen.dart';
+import '../../babies/presentation/add_baby_sheet.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -27,7 +28,7 @@ class SettingsScreen extends ConsumerWidget {
               ListTile(
                 leading: const Icon(Icons.child_care),
                 title: Text(baby.name),
-                subtitle: const Text('Details, weight and height'),
+                subtitle: const Text('Details, weight and length'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => Navigator.push(
                   context,
@@ -36,6 +37,17 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ),
               ),
+          if (familyId != null)
+            ListTile(
+              leading: const Icon(Icons.add_circle_outline),
+              title: const Text('Add another baby'),
+              onTap: () => showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                showDragHandle: true,
+                builder: (_) => AddBabySheet(familyId: familyId),
+              ),
+            ),
           const Divider(),
           const _Header('Appearance'),
           ListTile(

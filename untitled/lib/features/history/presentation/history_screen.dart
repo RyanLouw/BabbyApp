@@ -160,7 +160,8 @@ String _milk(Object? value) => switch (value) {
 String _growthDescription(BabyEvent event) {
   final values = <String>[
     if (event.data['weightKg'] case final num weight) '$weight kg',
-    if (event.data['heightCm'] case final num height) '$height cm',
+    if ((event.data['lengthCm'] ?? event.data['heightCm']) case final num length)
+      '$length cm',
   ];
   return 'Growth · ${values.join(' · ')}';
 }

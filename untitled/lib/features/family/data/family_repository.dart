@@ -86,4 +86,28 @@ class FamilyRepository {
       .collection('babies')
       .doc(baby.id)
       .set(baby.toFirestore(), SetOptions(merge: true));
+
+  Future<void> addBaby({
+    required String familyId,
+    required String name,
+    required DateTime dateOfBirth,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) throw StateError('A signed-in user is required.');
+    final id = const Uuid().v4();
+    final baby = Baby(
+      id: id,
+      familyId: familyId,
+      name: name.trim(),
+      dateOfBirth: dateOfBirth,
+      createdAt: DateTime.now().toUtc(),
+      createdBy: user.uid,
+    );
+    await _firestore
+        .collection('families')
+        .doc(familyId)
+        .collection('babies')
+        .doc(id)
+        .set(baby.toFirestore());
+  }
 }

@@ -19,7 +19,7 @@ class BabyDetailsScreen extends ConsumerStatefulWidget {
 class _BabyDetailsScreenState extends ConsumerState<BabyDetailsScreen> {
   late final TextEditingController _name;
   final _weight = TextEditingController();
-  final _height = TextEditingController();
+  final _length = TextEditingController();
   bool _saving = false;
 
   @override
@@ -32,7 +32,7 @@ class _BabyDetailsScreenState extends ConsumerState<BabyDetailsScreen> {
   void dispose() {
     _name.dispose();
     _weight.dispose();
-    _height.dispose();
+    _length.dispose();
     super.dispose();
   }
 
@@ -54,10 +54,10 @@ class _BabyDetailsScreenState extends ConsumerState<BabyDetailsScreen> {
 
   Future<void> _saveMeasurement() async {
     final weight = double.tryParse(_weight.text.replaceAll(',', '.'));
-    final height = double.tryParse(_height.text.replaceAll(',', '.'));
-    if ((weight == null || weight <= 0) && (height == null || height <= 0)) {
+    final length = double.tryParse(_length.text.replaceAll(',', '.'));
+    if ((weight == null || weight <= 0) && (length == null || length <= 0)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a weight or height.')),
+        const SnackBar(content: Text('Enter a weight or length.')),
       );
       return;
     }
@@ -76,12 +76,12 @@ class _BabyDetailsScreenState extends ConsumerState<BabyDetailsScreen> {
             updatedBy: user.uid,
             data: {
               if (weight != null && weight > 0) 'weightKg': weight,
-              if (height != null && height > 0) 'heightCm': height,
+              if (length != null && length > 0) 'lengthCm': length,
             },
           ),
         );
     _weight.clear();
-    _height.clear();
+    _length.clear();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Growth measurement saved.')),
@@ -126,10 +126,10 @@ class _BabyDetailsScreenState extends ConsumerState<BabyDetailsScreen> {
           ),
           const SizedBox(height: 12),
           TextField(
-            controller: _height,
+            controller: _length,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: const InputDecoration(
-              labelText: 'Height',
+              labelText: 'Length',
               suffixText: 'cm',
             ),
           ),
