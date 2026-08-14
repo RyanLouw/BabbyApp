@@ -21,7 +21,14 @@ if not exist "%~dp0configure_windows.ps1" (
 
 echo Configuring Flutter from "%FLUTTER_SDK%"...
 powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0configure_windows.ps1" -FlutterSdk "%FLUTTER_SDK%" %2
-exit /b %ERRORLEVEL%
+if errorlevel 1 exit /b %ERRORLEVEL%
+echo.
+echo IMPORTANT: Close this Command Prompt and open a new one, then run:
+echo   where flutter
+echo   flutter --version
+echo To use Flutter in this terminal immediately, run:
+echo   set "PATH=%FLUTTER_SDK%\bin;%%PATH%%"
+exit /b 0
 
 :usage
 echo Usage from Command Prompt:

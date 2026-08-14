@@ -53,6 +53,39 @@ The Flutter and FlutterFire commands are currently unavailable if PowerShell rep
 
 The PSReadLine warning shown by Android Studio is unrelated to Flutter and does not cause the command-not-found error.
 
+### `C:\dev\flutter` exists but `flutter` is not recognized
+
+Having the SDK directory on disk is not enough: Command Prompt only finds executables in the current directory or in the `PATH` environment variable. First verify the SDK was extracted at the expected depth:
+
+```bat
+dir C:\dev\flutter\bin\flutter.bat
+```
+
+If that file exists, test Flutter directly and make it available in the current Command Prompt:
+
+```bat
+C:\dev\flutter\bin\flutter.bat --version
+set "PATH=C:\dev\flutter\bin;%PATH%"
+flutter --version
+```
+
+Then persist the path for future terminals with the repository helper:
+
+```bat
+cd /d C:\dev\BabbyApp\untitled
+tool\configure_windows.cmd C:\dev\flutter
+```
+
+Close **all** existing Command Prompt/Android Studio terminal tabs and open a new one after the helper finishes. Existing parent terminals do not receive environment changes made by a child PowerShell process. Verify the new terminal with `where flutter`.
+
+If `dir C:\dev\flutter\bin\flutter.bat` reports that the file cannot be found, locate it:
+
+```bat
+dir /s /b C:\dev\flutter\flutter.bat
+```
+
+For example, if it prints `C:\dev\flutter\flutter\bin\flutter.bat`, the SDK was extracted with an extra nested `flutter` folder; use `C:\dev\flutter\flutter` as the SDK path or move that inner folder up one level.
+
 ## Firebase setup
 
 ### Android only (no FlutterFire CLI required)
