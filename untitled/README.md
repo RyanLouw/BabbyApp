@@ -190,8 +190,18 @@ Select-String -Path .\android\app\google-services.json -Pattern 'project_id'
 The repository also provides a Command Prompt/PowerShell-compatible wrapper that checks the required files and runs those `npx` commands:
 
 ```powershell
-.\tool\deploy_firebase.cmd
+.\deploy-firebase.cmd
 ```
+
+If PowerShell says the script itself is not recognized, verify whether the file is present in your checkout:
+
+```powershell
+Test-Path .\deploy-firebase.cmd
+Test-Path .\tool\deploy_firebase.cmd
+Get-ChildItem .\tool
+```
+
+`False` means the local checkout does not contain the helper; a command cannot run a file that is absent. Update/copy the latest repository changes, or skip the helper and run the `npx --yes firebase-tools ...` commands above directly. Since `npm -v` works, `npx` should already be available; verify it with `npx --version`.
 
 If `node` or `npm` is also not recognized, install the current Node.js LTS release from [nodejs.org](https://nodejs.org/), close and reopen the terminal, and run the wrapper again.
 
