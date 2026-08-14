@@ -169,6 +169,32 @@ firebase deploy --only firestore:rules,firestore:indexes
 
 If `firebase use` does not show the correct Firebase project ID, run `firebase use --add`, select the project referenced by the `project_id` field in `android/app/google-services.json`, and deploy again. In **Firebase Console → Firestore Database → Rules**, confirm the published rules include `match /users/{uid}` and then fully restart the app.
 
+Authentication succeeding proves that `google-services.json` points to a real Firebase project. It does not deploy or change that project's Firestore security rules: Authentication and Firestore are separate Firebase services. Therefore, a valid login and a Firestore `PERMISSION_DENIED` can occur together.
+
+If PowerShell reports that `firebase` is not recognized, Firebase CLI is not installed or is not on `PATH`. If Node.js is installed, use `npx` without a global installation:
+
+```powershell
+node --version
+npm --version
+npx --yes firebase-tools login
+npx --yes firebase-tools use --add
+npx --yes firebase-tools deploy --only firestore:rules,firestore:indexes
+```
+
+When selecting a project, match the `project_id` shown by:
+
+```powershell
+Select-String -Path .\android\app\google-services.json -Pattern 'project_id'
+```
+
+The repository also provides a Command Prompt/PowerShell-compatible wrapper that checks the required files and runs those `npx` commands:
+
+```powershell
+.\tool\deploy_firebase.cmd
+```
+
+If `node` or `npm` is also not recognized, install the current Node.js LTS release from [nodejs.org](https://nodejs.org/), close and reopen the terminal, and run the wrapper again.
+
 ### Sign-in persistence
 
 Firebase Authentication persists the Android user session automatically. The app router listens to `authStateChanges()`: it opens **Home** for an existing session, redirects signed-out users to **Login**, and only forgets the session after the user selects **Logout**. There is no separate “Remember me” checkbox because remembering the authenticated user is the safe default on Android.
