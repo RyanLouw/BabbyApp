@@ -209,6 +209,10 @@ If `node` or `npm` is also not recognized, install the current Node.js LTS relea
 
 Firebase Authentication persists the Android user session automatically. The app router listens to `authStateChanges()`: it opens **Home** for an existing session, redirects signed-out users to **Login**, and only forgets the session after the user selects **Logout**. There is no separate “Remember me” checkbox because remembering the authenticated user is the safe default on Android.
 
+### Android `WindowOnBackDispatcher` messages
+
+Messages such as `W/WindowOnBackDispatcher: sendCancelIfRunning` are Android diagnostic warnings emitted when an in-progress or potential back gesture is cancelled. They are not a Firebase, Firestore, login, or application crash error and require no user action when navigation continues to work. The Android manifest explicitly enables the modern back-invoked callback used by current Flutter versions. Investigate further only if the UI actually fails to go back; in that case capture the first `E/` line or Dart exception around the failure rather than repeated dispatcher warnings.
+
 ### Installing `flutterfire` on Windows (multi-platform configuration)
 
 `flutterfire` is a separate CLI; installing the Flutter SDK does not install it. In PowerShell, run:
