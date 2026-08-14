@@ -57,10 +57,25 @@ The PSReadLine warning shown by Android Studio is unrelated to Flutter and does 
 
 ### Android only (no FlutterFire CLI required)
 
-1. Create a Firebase project and enable **Authentication → Sign-in method → Email/Password** and Cloud Firestore.
-2. Register an Android app whose package name is `com.example.untitled`. If you use a different package name, update `applicationId` and `namespace` in `android/app/build.gradle.kts` first.
-3. Download `google-services.json` and save it at **`android/app/google-services.json`** (not `Android/app` beside the project). The Google Services Gradle plugin is already configured in this repository.
-4. Run:
+1. In the [Firebase console](https://console.firebase.google.com/), create a project with the display name **Babby Care**. Firebase also asks for a globally unique project ID; accept its suggestion (for example, `babby-care-12345`). The project ID does not need to match the Android package name. Google Analytics is optional for this app.
+2. Add an **Android app** to that Firebase project with these values:
+
+   | Firebase field | Value |
+   | --- | --- |
+   | Android package name | `com.babbycare.app` |
+   | App nickname | `Babby Care Android` (optional) |
+   | Debug signing certificate SHA-1 | Leave blank for email/password authentication |
+
+   The package name must match exactly; it is already configured as both `namespace` and `applicationId` in `android/app/build.gradle.kts`.
+3. Download Firebase's real `google-services.json`. Put it in the **same folder** as the example, but keep the real filename:
+
+   ```text
+   untitled/android/app/google-services.json
+   ```
+
+   Do **not** rename it to `google-services.json.example`, and do not overwrite or edit the example file. The real file is intentionally ignored by Git.
+4. Enable **Authentication → Sign-in method → Email/Password**, then create a Cloud Firestore database. The Google Services Gradle plugin is already configured in this repository.
+5. Run:
 
    ```powershell
    flutter clean
