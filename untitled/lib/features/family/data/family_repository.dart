@@ -79,4 +79,11 @@ class FamilyRepository {
     await batch.commit();
     return family.id;
   }
+
+  Future<void> updateBaby(Baby baby) => _firestore
+      .collection('families')
+      .doc(baby.familyId)
+      .collection('babies')
+      .doc(baby.id)
+      .set(baby.toFirestore(), SetOptions(merge: true));
 }

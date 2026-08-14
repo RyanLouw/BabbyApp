@@ -129,12 +129,14 @@ String _description(BabyEvent event) => switch (event.type) {
           : 'Slept ${_duration(event.duration())}',
       BabyEventType.nappy => '${_capitalize(event.data['kind'])} nappy',
       BabyEventType.note => event.notes ?? 'Note',
+      BabyEventType.growth => _growthDescription(event),
       _ => event.type.name,
     };
 IconData _icon(BabyEventType type) => switch (type) {
       BabyEventType.feeding => Icons.local_drink,
       BabyEventType.sleep => Icons.bedtime,
       BabyEventType.nappy => Icons.baby_changing_station,
+      BabyEventType.growth => Icons.monitor_weight_outlined,
       _ => Icons.note,
     };
 String _time(DateTime value) {
@@ -154,3 +156,11 @@ String _milk(Object? value) => switch (value) {
       'other' => 'Other',
       _ => '',
     };
+
+String _growthDescription(BabyEvent event) {
+  final values = <String>[
+    if (event.data['weightKg'] case final num weight) '$weight kg',
+    if (event.data['heightCm'] case final num height) '$height cm',
+  ];
+  return 'Growth · ${values.join(' · ')}';
+}

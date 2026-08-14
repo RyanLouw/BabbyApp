@@ -156,12 +156,49 @@ void main() {
   });
 
   testWidgets('statistics period can be changed', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: StatisticsScreen()));
+    final now = DateTime.now();
+    final baby = Baby(
+      id: 'a',
+      familyId: 'f',
+      name: 'Amelia',
+      dateOfBirth: now,
+      createdAt: now,
+      createdBy: 'u',
+    );
+    final growth = BabyEvent(
+      id: 'growth',
+      familyId: 'f',
+      babyId: 'a',
+      type: BabyEventType.growth,
+      start: now,
+      createdAt: now,
+      createdBy: 'u',
+      updatedAt: now,
+      updatedBy: 'u',
+      data: const {'weightKg': 3.4, 'heightCm': 51.0},
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          currentFamilyIdProvider.overrideWith((ref) => Stream.value('f')),
+          babiesProvider('f').overrideWith((ref) => Stream.value([baby])),
+          eventRepositoryProvider.overrideWithValue(_EventRepository([growth])),
+        ],
+        child: const MaterialApp(home: StatisticsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-    expect(find.text('All babies — Today'), findsOneWidget);
-    await tester.tap(find.text('7 days'));
+    expect(find.text('Whole family'), findsOneWidget);
+    await tester.tap(find.text('Whole family'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Amelia').last);
+    await tester.pumpAndSettle();
+    expect(find.text('3.40 kg'), findsOneWidget);
+    expect(find.text('51.00 cm'), findsOneWidget);
+    await tester.tap(find.text('Month'));
     await tester.pump();
-    expect(find.text('All babies — 7 days'), findsOneWidget);
+    expect(find.text('Month'), findsOneWidget);
   });
 
   testWidgets('registration rejects a display name entered as an email', (

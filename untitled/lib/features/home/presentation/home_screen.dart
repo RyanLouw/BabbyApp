@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../core/providers.dart';
 import '../../babies/domain/baby.dart';
+import '../../babies/presentation/baby_details_screen.dart';
 import '../../events/presentation/record_event_sheet.dart';
 import '../../events/domain/baby_event.dart';
 import '../../family/presentation/create_family_screen.dart';
@@ -112,17 +113,30 @@ class _BabyCard extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  CircleAvatar(child: Text(baby.name.characters.first)),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      baby.name,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
+              InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => BabyDetailsScreen(baby: baby),
                   ),
-                ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      CircleAvatar(child: Text(baby.name.characters.first)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          baby.name,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 20),
               _Status(
