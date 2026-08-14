@@ -1,5 +1,7 @@
 import 'package:babby_care/features/events/presentation/record_event_sheet.dart';
 import 'package:babby_care/features/auth/presentation/auth_screen.dart';
+import 'package:babby_care/core/providers.dart';
+import 'package:babby_care/features/babies/domain/baby.dart';
 import 'package:babby_care/features/home/presentation/home_screen.dart';
 import 'package:babby_care/features/statistics/presentation/statistics_screen.dart';
 import 'package:flutter/material.dart';
@@ -8,11 +10,39 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
   testWidgets('dashboard shows both babies and current state', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+    final now = DateTime(2026);
+    final babies = [
+      Baby(
+        id: 'a',
+        familyId: 'f',
+        name: 'Amelia',
+        dateOfBirth: now,
+        createdAt: now,
+        createdBy: 'u',
+      ),
+      Baby(
+        id: 'b',
+        familyId: 'f',
+        name: 'Benjamin',
+        dateOfBirth: now,
+        createdAt: now,
+        createdBy: 'u',
+      ),
+    ];
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          currentFamilyIdProvider.overrideWith((ref) => Stream.value('f')),
+          babiesProvider('f').overrideWith((ref) => Stream.value(babies)),
+        ],
+        child: const MaterialApp(home: HomeScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-    expect(find.text('Baby A'), findsOneWidget);
-    expect(find.text('Baby B'), findsOneWidget);
-    expect(find.textContaining('Sleeping'), findsOneWidget);
+    expect(find.text('Amelia'), findsOneWidget);
+    expect(find.text('Benjamin'), findsOneWidget);
+    expect(find.text('No feeds yet'), findsNWidgets(2));
   });
 
   testWidgets('quick entry exposes common events', (tester) async {
@@ -23,6 +53,23 @@ void main() {
     expect(find.text('Feed'), findsOneWidget);
     expect(find.text('Sleep'), findsOneWidget);
     expect(find.text('Nappy'), findsOneWidget);
+  });
+
+  testWidgets('new family setup starts with two baby forms', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          currentFamilyIdProvider.overrideWith((ref) => Stream.value(null)),
+        ],
+        child: const MaterialApp(home: HomeScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Add your babies'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, 'Baby 1 name'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, 'Baby 2 name'), findsOneWidget);
+    expect(find.text('Create family'), findsOneWidget);
   });
 
   testWidgets('statistics period can be changed', (tester) async {

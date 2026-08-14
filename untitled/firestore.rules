@@ -4,6 +4,7 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function member(familyId) { return signedIn() && exists(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid)); }
     function owner(familyId) { return member(familyId) && get(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid)).data.role == 'owner'; }
+    function ownerAfter(familyId) { return signedIn() && getAfter(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid)).data.role == 'owner'; }
     match /users/{uid} { allow read, create, update: if signedIn() && request.auth.uid == uid; allow delete: if false; }
     match /families/{familyId} {
       allow create: if signedIn() && request.resource.data.createdBy == request.auth.uid;
@@ -11,12 +12,16 @@ service cloud.firestore {
       allow update, delete: if owner(familyId);
       match /members/{uid} {
         allow read: if member(familyId);
-        allow create: if signedIn() && (owner(familyId) || (request.auth.uid == uid && request.resource.data.role == 'caregiver'));
+        allow create: if signedIn() && (owner(familyId) ||
+          (request.auth.uid == uid && request.resource.data.role == 'owner' &&
+            getAfter(/databases/$(database)/documents/families/$(familyId)).data.createdBy == request.auth.uid));
         allow update, delete: if owner(familyId);
       }
       match /babies/{babyId} {
         allow read: if member(familyId);
-        allow write: if owner(familyId) && request.resource.data.familyId == familyId;
+        allow create: if ownerAfter(familyId) && request.resource.data.familyId == familyId;
+        allow update: if owner(familyId) && request.resource.data.familyId == familyId;
+        allow delete: if owner(familyId);
         match /events/{eventId} {
           allow read: if member(familyId);
           allow create, update: if member(familyId) && request.resource.data.familyId == familyId && request.resource.data.babyId == babyId;

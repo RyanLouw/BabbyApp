@@ -6,6 +6,14 @@ class Baby {
   final String id, familyId, name, createdBy;
   final DateTime dateOfBirth, createdAt;
   final String? profileImage;
+  Map<String, Object?> toFirestore() => {
+    'familyId': familyId,
+    'name': name,
+    'dateOfBirth': Timestamp.fromDate(dateOfBirth.toUtc()),
+    'profileImage': profileImage,
+    'createdAt': Timestamp.fromDate(createdAt.toUtc()),
+    'createdBy': createdBy,
+  };
   factory Baby.fromFirestore(String id, Map<String, Object?> value) => Baby(id: id,
     familyId: value['familyId']! as String, name: value['name']! as String,
     dateOfBirth: (value['dateOfBirth']! as Timestamp).toDate(),
