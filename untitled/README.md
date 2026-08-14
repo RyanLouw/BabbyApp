@@ -74,7 +74,7 @@ The PSReadLine warning shown by Android Studio is unrelated to Flutter and does 
    ```
 
    Do **not** rename it to `google-services.json.example`, and do not overwrite or edit the example file. The real file is intentionally ignored by Git.
-4. Enable **Authentication → Sign-in method → Email/Password**, then create a Cloud Firestore database. The Google Services Gradle plugin is already configured in this repository.
+4. Enable Authentication and create Firestore by following the detailed console steps below. The Google Services Gradle plugin is already configured in this repository.
 5. Run:
 
    ```powershell
@@ -84,6 +84,40 @@ The PSReadLine warning shown by Android Studio is unrelated to Flutter and does 
    ```
 
 `Firebase.initializeApp()` discovers the Android configuration generated from that JSON file, so `flutterfire configure` is not necessary when Android is the only target.
+
+### Enable Email/Password Authentication
+
+1. Open the [Firebase console](https://console.firebase.google.com/) and select the **Babby Care** project.
+2. In the left menu, select **Build → Authentication**.
+3. Select **Get started** if this is the first authentication provider.
+4. Open the **Sign-in method** tab, select **Email/Password** under *Native providers*, and turn on the first **Email/Password** switch.
+5. Leave **Email link (passwordless sign-in)** disabled for V1, then select **Save**.
+
+No user needs to be created manually: the app's registration screen calls Firebase Authentication to create accounts. For a quick console-only test, use **Authentication → Users → Add user**.
+
+Official reference: [Firebase email/password authentication for Flutter](https://firebase.google.com/docs/auth/flutter/password-auth).
+
+### Create the Cloud Firestore database
+
+1. In the same Firebase project, select **Build → Firestore Database**.
+2. Select **Create database**. If Firebase asks for an edition, choose **Standard edition**.
+3. Choose **Start in production mode**. Do not leave the database in test mode; test mode permits overly broad access for a limited period.
+4. Choose a database location near the caregivers who will use the app. Treat this choice as permanent, then select **Enable**.
+5. Do not manually create `users` or `families` collections. Firestore creates collections when the app writes its first documents.
+6. From the `untitled` project directory, deploy this repository's membership-based rules and event index:
+
+   ```powershell
+   npm install -g firebase-tools
+   firebase login
+   firebase use --add
+   firebase deploy --only firestore:rules,firestore:indexes
+   ```
+
+   When `firebase use --add` asks which project to use, select **Babby Care** and choose an alias such as `default`.
+
+7. In the Firebase console, open **Firestore Database → Rules** and confirm the deployed rules begin with `rules_version = '2';`. Open **Indexes** and wait until the events index reports **Enabled** before relying on cross-baby history queries.
+
+Official reference: [Get started with Cloud Firestore](https://firebase.google.com/docs/firestore/quickstart).
 
 ### Installing `flutterfire` on Windows (multi-platform configuration)
 
