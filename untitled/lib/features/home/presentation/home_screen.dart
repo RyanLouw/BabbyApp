@@ -40,13 +40,6 @@ class _FamilyHome extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Your babies'),
         actions: const [
-          Padding(
-            padding: EdgeInsets.all(16),
-            child: Chip(
-              avatar: Icon(Icons.cloud_done, size: 16),
-              label: Text('Synced'),
-            ),
-          ),
         ],
       ),
       body: babies.when(
