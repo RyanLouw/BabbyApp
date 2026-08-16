@@ -26,6 +26,9 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["admobAppId"] =
+            (project.findProperty("ADMOB_APP_ID") as String?)
+                ?: "ca-app-pub-3940256099942544~3347511713"
     }
 
     buildTypes {
@@ -45,4 +48,10 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Use Play's native update API directly so Flutter does not need the
+    // third-party in_app_update package from pub.dev.
+    implementation("com.google.android.play:app-update-ktx:2.1.0")
 }

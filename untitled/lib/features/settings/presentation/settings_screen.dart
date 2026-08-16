@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../../app/app.dart';
 import '../../../core/providers.dart';
@@ -69,6 +70,22 @@ class SettingsScreen extends ConsumerWidget {
                 }
               },
             ),
+          ),
+          const Divider(),
+          const _Header('Privacy'),
+          ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: const Text('Ad privacy choices'),
+            subtitle: const Text('Review or change your advertising consent'),
+            onTap: () => ConsentForm.showPrivacyOptionsForm((error) {
+              if (error != null && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Privacy choices are not available right now.'),
+                  ),
+                );
+              }
+            }),
           ),
           const Divider(),
           ListTile(

@@ -2,9 +2,150 @@
 
 A feature-first Flutter/Material 3 Android client for fast, shared newborn-care tracking. Firebase Authentication owns sessions; Firestore stores `families/{familyId}/members`, `babies`, and each baby's `events`. Event documents keep a small common envelope and a typed `data` map, making future event types additive.
 
+## Google Play release checklist
+
+The app now uses Google's UMP consent flow before requesting a bottom banner,
+and Google's native immediate in-app update flow when Play reports a newer
+version. The update integration intentionally does not use the third-party
+`in_app_update` Flutter package, so dependency resolution cannot fail on that
+package.
+Debug builds use Google's official test ad identifiers. Before uploading a
+release, complete all of these steps:
+
+The banner is rendered by the shared app shell **below** the Home/History/Stats/
+Settings navigation bar. The scaffold reserves space for it, so the ad never
+covers care controls or scrolling content. It stays in one place while users
+switch tabs and disappears entirely when no ad is loaded or consent does not
+permit ads.
+
+1. Create the Android app in AdMob and create a banner unit. In **Privacy &
+   messaging**, publish the consent message for the countries where the app is
+   available. Never use the checked-in test identifiers for real traffic.
+2. Put the AdMob **app ID** (the value containing `~`) in your user-level
+   `~/.gradle/gradle.properties` as `ADMOB_APP_ID=ca-app-pub-...~...`. Do not
+   put the secret in this repository. Pass the banner **unit ID** (the value containing `/`) to
+   the release build:
+
+   ```bash
+   flutter build appbundle --release \
+     --dart-define=ADMOB_BANNER_ID=ca-app-pub-.../...
+   ```
+
+3. Replace the debug signing configuration in `android/app/build.gradle.kts`
+   with a private upload-key signing configuration. Back up the upload keystore
+   and passwords outside the repository, then enroll in Play App Signing.
+4. Increase both parts of `version` in `pubspec.yaml` for every upload (for
+   example, `1.0.1+2`). Play requires every bundle to have a unique, increasing
+   build number. Publish through an internal testing track first: Play's update
+   API cannot report updates for a locally installed APK.
+5. Complete Play Console's Data safety, Ads, content rating, target audience,
+   app access, and privacy-policy declarations. The privacy policy should
+   describe Firebase Authentication/Firestore, AdMob, account deletion, data
+   retention, and how caregivers can request support.
+6. Test account creation, family permissions, offline/reconnect behavior,
+   notification permissions, consent choices, ad loading, update enforcement,
+   accessibility, and deletion on a physical device from the Play internal
+   testing track. Also configure Crashlytics/performance monitoring before a
+   public launch so production failures can be diagnosed.
+
+Immediate updates are deliberately enforced whenever Google Play reports that
+an update exists. If staged rollouts or optional updates are wanted later, put a
+minimum-supported build number in Firebase Remote Config and only block builds
+below that number instead of requiring every available update.
+
+### Dependency resolution reports a socket error
+
+The Play update feature uses the native Android Play library and does not
+require the `in_app_update` package. If an old checkout still reports that
+package, pull this revision and run `flutter pub get` again. A socket error for
+another package means the machine cannot currently reach `https://pub.dev`; it
+is not a Dart dependency-version conflict. Check VPN/proxy/firewall settings,
+confirm the URL opens in a browser, and then run:
+
+```bat
+C:\dev\flutter\bin\flutter.bat pub get
+```
+
+Do not disable TLS verification or download unofficial package archives. The
+native Play dependency is downloaded by Gradle from Google's Maven repository
+the first time Android is built.
+
+### Fix `Could not get unknown property 'all'` in `google_mobile_ads`
+
+That Gradle configuration error comes from `google_mobile_ads` 6.x, which is not
+compatible with this project's Gradle 9 / Android Gradle Plugin 9 toolchain.
+The project now requires `google_mobile_ads` 9.1 or newer. First verify that the
+checkout actually contains that change. If this command still prints `^6.0.0`,
+the checkout is old and cleaning it cannot select 9.1; pull the latest commit or
+change the constraint before continuing.
+
+**PowerShell** (`PS C:\...>` prompt):
+
+```powershell
+Set-Location C:\dev\BabbyApp\untitled
+Select-String -Path .\pubspec.yaml -Pattern 'google_mobile_ads:'
+# The output must say: google_mobile_ads: ^9.1.0
+C:\dev\flutter\bin\flutter.bat clean
+Remove-Item -Recurse -Force .\.dart_tool -ErrorAction SilentlyContinue
+C:\dev\flutter\bin\flutter.bat pub get
+Select-String -Path .\pubspec.lock -Pattern 'google_mobile_ads' -Context 0,6
+C:\dev\flutter\bin\flutter.bat run
+```
+
+**Command Prompt** (`C:\...>` prompt):
+
+```bat
+cd /d C:\dev\BabbyApp\untitled
+C:\dev\flutter\bin\flutter.bat clean
+if exist .dart_tool rmdir /s /q .dart_tool
+C:\dev\flutter\bin\flutter.bat pub get
+C:\dev\flutter\bin\flutter.bat run
+```
+
+`cd /d` and `if exist ...` are Command Prompt syntax. PowerShell uses
+`Set-Location` and `Remove-Item`; do not paste the Command Prompt block at a
+`PS>` prompt. A leading `^B` is also a pasted control character and must not be
+included in a command.
+
+The Java `System::load` native-access lines are warnings from Gradle and are not
+the cause of this failure. Do not edit the cached package under
+`AppData\Local\Pub\Cache`; `pub get` selects the compatible package declared by
+this repository.
+
 ## Windows prerequisite: make `flutter` available
 
 The Flutter and FlutterFire commands are currently unavailable if PowerShell reports *“The term 'flutter' is not recognized”*. The Android Studio Flutter plugin does not make a Flutter SDK executable available to every terminal by itself.
+
+### Fix “Building with plugins requires symlink support”
+
+This message is a Windows workstation setting, not an AdMob dependency error.
+Packages downloaded successfully; Flutter stopped afterward because Windows did
+not allow it to create the plugin symlinks used by `google_mobile_ads` and other
+Flutter plugins.
+
+1. Press **Windows+R**, enter `ms-settings:developers`, and press **Enter** (or
+   run `start ms-settings:developers` from Command Prompt).
+2. Turn **Developer Mode** on and accept the confirmation. You do not need to
+   enable Device Portal or Device Discovery.
+3. Close Android Studio and all terminals, reopen them, and run in PowerShell:
+
+   ```powershell
+   Set-Location C:\dev\BabbyApp\untitled
+   C:\dev\flutter\bin\flutter.bat clean
+   C:\dev\flutter\bin\flutter.bat pub get
+   C:\dev\flutter\bin\flutter.bat run
+   ```
+
+The repository setup helper now checks this setting and opens the correct
+Windows page when it is disabled:
+
+```bat
+tool\configure_windows.cmd C:\dev\flutter
+```
+
+If Developer Mode is controlled by an employer or school policy, ask the
+administrator to enable symbolic-link development. Moving the project, changing
+the emulator, or repeatedly running `pub get` will not bypass that policy.
 
 1. Download the stable Flutter SDK using the [official Windows manual installation guide](https://docs.flutter.dev/install/manual) and extract it to a simple writable path such as `C:\src\flutter`. Do not place it under `Program Files`.
 2. Confirm the SDK was actually extracted. This file must exist before continuing:

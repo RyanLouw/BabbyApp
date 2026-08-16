@@ -22,6 +22,30 @@ function Add-UserPathEntry([string]$Entry) {
     }
 }
 
+function Test-WindowsDeveloperMode {
+    $key = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock'
+    try {
+        $value = Get-ItemPropertyValue -Path $key -Name 'AllowDevelopmentWithoutDevLicense' -ErrorAction Stop
+        return $value -eq 1
+    }
+    catch {
+        return $false
+    }
+}
+
+if (-not (Test-WindowsDeveloperMode)) {
+    Write-Warning @"
+Windows Developer Mode is disabled. Flutter plugins (including AdMob) need it
+so that pub can create symbolic links.
+
+The Windows settings page will now open. Turn Developer Mode ON, accept the
+confirmation, close this terminal, and then rerun this script. This setting is
+on the development PC only; it does not change the Android app or emulator.
+"@
+    Start-Process 'ms-settings:developers'
+    throw 'Enable Windows Developer Mode, then rerun the setup script.'
+}
+
 if (-not (Get-Command flutter -ErrorAction SilentlyContinue)) {
     $candidates = @(
         $FlutterSdk,
