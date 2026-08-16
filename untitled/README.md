@@ -64,6 +64,26 @@ Do not disable TLS verification or download unofficial package archives. The
 native Play dependency is downloaded by Gradle from Google's Maven repository
 the first time Android is built.
 
+### Fix `Could not get unknown property 'all'` in `google_mobile_ads`
+
+That Gradle configuration error comes from `google_mobile_ads` 6.x, which is not
+compatible with this project's Gradle 9 / Android Gradle Plugin 9 toolchain.
+The project now requires `google_mobile_ads` 9.1 or newer. After pulling the
+latest revision, remove the old generated state and resolve packages again:
+
+```bat
+cd /d C:\dev\BabbyApp\untitled
+C:\dev\flutter\bin\flutter.bat clean
+if exist .dart_tool rmdir /s /q .dart_tool
+C:\dev\flutter\bin\flutter.bat pub get
+C:\dev\flutter\bin\flutter.bat run
+```
+
+The Java `System::load` native-access lines are warnings from Gradle and are not
+the cause of this failure. Do not edit the cached package under
+`AppData\Local\Pub\Cache`; `pub get` selects the compatible package declared by
+this repository.
+
 ## Windows prerequisite: make `flutter` available
 
 The Flutter and FlutterFire commands are currently unavailable if PowerShell reports *“The term 'flutter' is not recognized”*. The Android Studio Flutter plugin does not make a Flutter SDK executable available to every terminal by itself.
