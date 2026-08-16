@@ -68,6 +68,37 @@ the first time Android is built.
 
 The Flutter and FlutterFire commands are currently unavailable if PowerShell reports *“The term 'flutter' is not recognized”*. The Android Studio Flutter plugin does not make a Flutter SDK executable available to every terminal by itself.
 
+### Fix “Building with plugins requires symlink support”
+
+This message is a Windows workstation setting, not an AdMob dependency error.
+Packages downloaded successfully; Flutter stopped afterward because Windows did
+not allow it to create the plugin symlinks used by `google_mobile_ads` and other
+Flutter plugins.
+
+1. Press **Windows+R**, enter `ms-settings:developers`, and press **Enter** (or
+   run `start ms-settings:developers` from Command Prompt).
+2. Turn **Developer Mode** on and accept the confirmation. You do not need to
+   enable Device Portal or Device Discovery.
+3. Close Android Studio and all terminals, reopen them, and run:
+
+   ```bat
+   cd /d C:\dev\BabbyApp\untitled
+   C:\dev\flutter\bin\flutter.bat clean
+   C:\dev\flutter\bin\flutter.bat pub get
+   C:\dev\flutter\bin\flutter.bat run
+   ```
+
+The repository setup helper now checks this setting and opens the correct
+Windows page when it is disabled:
+
+```bat
+tool\configure_windows.cmd C:\dev\flutter
+```
+
+If Developer Mode is controlled by an employer or school policy, ask the
+administrator to enable symbolic-link development. Moving the project, changing
+the emulator, or repeatedly running `pub get` will not bypass that policy.
+
 1. Download the stable Flutter SDK using the [official Windows manual installation guide](https://docs.flutter.dev/install/manual) and extract it to a simple writable path such as `C:\src\flutter`. Do not place it under `Program Files`.
 2. Confirm the SDK was actually extracted. This file must exist before continuing:
 
