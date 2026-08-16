@@ -5,7 +5,10 @@ A feature-first Flutter/Material 3 Android client for fast, shared newborn-care 
 ## Google Play release checklist
 
 The app now uses Google's UMP consent flow before requesting a bottom banner,
-and Google's immediate in-app update flow when Play reports a newer version.
+and Google's native immediate in-app update flow when Play reports a newer
+version. The update integration intentionally does not use the third-party
+`in_app_update` Flutter package, so dependency resolution cannot fail on that
+package.
 Debug builds use Google's official test ad identifiers. Before uploading a
 release, complete all of these steps:
 
@@ -43,6 +46,23 @@ Immediate updates are deliberately enforced whenever Google Play reports that
 an update exists. If staged rollouts or optional updates are wanted later, put a
 minimum-supported build number in Firebase Remote Config and only block builds
 below that number instead of requiring every available update.
+
+### Dependency resolution reports a socket error
+
+The Play update feature uses the native Android Play library and does not
+require the `in_app_update` package. If an old checkout still reports that
+package, pull this revision and run `flutter pub get` again. A socket error for
+another package means the machine cannot currently reach `https://pub.dev`; it
+is not a Dart dependency-version conflict. Check VPN/proxy/firewall settings,
+confirm the URL opens in a browser, and then run:
+
+```bat
+C:\dev\flutter\bin\flutter.bat pub get
+```
+
+Do not disable TLS verification or download unofficial package archives. The
+native Play dependency is downloaded by Gradle from Google's Maven repository
+the first time Android is built.
 
 ## Windows prerequisite: make `flutter` available
 

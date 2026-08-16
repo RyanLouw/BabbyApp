@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:in_app_update/in_app_update.dart';
+import 'package:flutter/services.dart';
 
 /// Checks Google Play for an update at startup and whenever the app resumes.
 ///
@@ -20,6 +20,8 @@ class AppUpdateGate extends StatefulWidget {
 
 class _AppUpdateGateState extends State<AppUpdateGate>
     with WidgetsBindingObserver {
+  static const _updates = MethodChannel('com.babbycare.app/play_update');
+
   bool _checking = false;
   bool _updateRequired = false;
   String? _error;
@@ -51,20 +53,19 @@ class _AppUpdateGateState extends State<AppUpdateGate>
       _error = null;
     });
     try {
-      final info = await InAppUpdate.checkForUpdate();
-      final required = info.updateAvailability ==
-          UpdateAvailability.updateAvailable;
+      final required =
+          await _updates.invokeMethod<bool>('checkAndStartImmediateUpdate') ??
+          false;
       if (mounted) setState(() => _updateRequired = required);
-      if (required && info.immediateUpdateAllowed) {
-        await InAppUpdate.performImmediateUpdate();
-      } else if (required && mounted) {
-        setState(() => _error = 'The update cannot start yet. Try again.');
-      }
-    } catch (error) {
+    } on PlatformException catch (error) {
       // Play update checks normally fail for local/debug installations. Only
       // block when Play had already confirmed that an update is required.
-      if (mounted && _updateRequired) {
-        setState(() => _error = 'Could not open Google Play. Check your connection.');
+      if (mounted &&
+          (_updateRequired || error.code != 'UPDATE_CHECK_FAILED')) {
+        setState(() {
+          _updateRequired = true;
+          _error = 'Could not open Google Play. Check your connection.';
+        });
       }
     } finally {
       if (mounted) setState(() => _checking = false);
