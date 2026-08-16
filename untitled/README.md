@@ -12,6 +12,12 @@ package.
 Debug builds use Google's official test ad identifiers. Before uploading a
 release, complete all of these steps:
 
+The banner is rendered by the shared app shell **below** the Home/History/Stats/
+Settings navigation bar. The scaffold reserves space for it, so the ad never
+covers care controls or scrolling content. It stays in one place while users
+switch tabs and disappears entirely when no ad is loaded or consent does not
+permit ads.
+
 1. Create the Android app in AdMob and create a banner unit. In **Privacy &
    messaging**, publish the consent message for the countries where the app is
    available. Never use the checked-in test identifiers for real traffic.

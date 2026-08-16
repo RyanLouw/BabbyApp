@@ -56,15 +56,22 @@ class _AdBannerState extends State<AdBanner> {
   Widget build(BuildContext context) {
     final ad = _ad;
     if (!_loaded || ad == null) return const SizedBox.shrink();
-    return SafeArea(
-      top: false,
-      child: Center(
-        child: SizedBox(
-          width: ad.size.width.toDouble(),
-          height: ad.size.height.toDouble(),
-          child: AdWidget(ad: ad),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Divider(height: 1),
+        const SizedBox(height: 6),
+        SafeArea(
+          top: false,
+          child: Center(
+            child: SizedBox(
+              width: ad.size.width.toDouble(),
+              height: ad.size.height.toDouble(),
+              child: AdWidget(ad: ad),
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }
