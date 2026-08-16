@@ -256,3 +256,61 @@ firebase deploy --only firestore:rules,firestore:indexes
 Firestore disk persistence is explicitly enabled with an unlimited cache. Writes therefore complete against the local cache while offline and sync when connectivity returns. Documents store UTC Firestore timestamps and use `updatedAt`/`updatedBy` for deliberately simple last-write-wins conflict handling.
 
 History intentionally listens to each known baby's `events` subcollection and merges the results on-device. It does not use a cross-family collection-group query. This aligns the query path with the membership rules, works from Firestore's local cache, and prevents a valid family member from receiving `PERMISSION_DENIED` when opening History. New writes appear through the same snapshot streams without manually refreshing the page.
+
+## Build an Android APK for a tester
+
+### Quick one-phone test
+
+Connect the friend's Android phone by USB, enable **Developer options → USB debugging**, accept the computer prompt on the phone, then run:
+
+```powershell
+flutter devices
+flutter run --release
+```
+
+This installs and launches the app directly. For a file that can be sent to the tester, run:
+
+```powershell
+flutter clean
+flutter pub get
+flutter analyze
+flutter test
+flutter build apk --release
+```
+
+The universal APK is created at:
+
+```text
+build\app\outputs\flutter-apk\app-release.apk
+```
+
+Upload that APK to a private Google Drive, OneDrive, or similar link. The tester downloads it on Android, opens it, and allows **Install unknown apps** for the browser/files app when Android asks. Do not distribute `google-services.json`, the source tree, passwords, or signing keys.
+
+The project falls back to Flutter's debug signing key when no release key is configured, which is acceptable only for a small private test. Android will only install a later APK over the first one when it has the same application ID and signing key. Keep the signing key stable and increment `version` in `pubspec.yaml` for every tester update.
+
+### Create a stable release signing key
+
+Create this once and back it up securely outside source control:
+
+```powershell
+keytool -genkeypair -v -keystore $env:USERPROFILE\babby-care-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+```
+
+Create `android/key.properties` locally (it is ignored by Git):
+
+```properties
+storePassword=YOUR_KEYSTORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=upload
+storeFile=C:\\Users\\YOUR_NAME\\babby-care-upload.jks
+```
+
+Then build again with `flutter build apk --release`. Gradle automatically uses this release key when `android/key.properties` exists. Never lose the keystore: a different key cannot update an already installed app with the same package name.
+
+Before sending, calculate a checksum so the tester can verify the download:
+
+```powershell
+Get-FileHash .\build\app\outputs\flutter-apk\app-release.apk -Algorithm SHA256
+```
+
+For a larger or ongoing test, prefer a Google Play Console **Internal testing** track: build an Android App Bundle with `flutter build appbundle --release`, upload `build\app\outputs\bundle\release\app-release.aab`, add tester email addresses, and share the Play opt-in link. Play handles installation and updates; the one-time Play Console registration is not required for direct APK testing.

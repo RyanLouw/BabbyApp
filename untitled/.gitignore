@@ -48,3 +48,7 @@ app.*.map.json
 .widget_preview/
 # Firebase platform credentials are downloaded per environment.
 android/app/google-services.json
+# Android release-signing secrets.
+android/key.properties
+*.jks
+*.keystore
