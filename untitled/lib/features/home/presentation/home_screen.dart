@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../../core/ad_banner.dart';
 import '../../../core/providers.dart';
 import '../../babies/domain/baby.dart';
 import '../../babies/presentation/baby_details_screen.dart';
@@ -78,6 +79,7 @@ class _FamilyHome extends ConsumerWidget {
                 ],
               ),
       ),
+      bottomNavigationBar: const AdBanner(),
     );
   }
 }

@@ -2,6 +2,48 @@
 
 A feature-first Flutter/Material 3 Android client for fast, shared newborn-care tracking. Firebase Authentication owns sessions; Firestore stores `families/{familyId}/members`, `babies`, and each baby's `events`. Event documents keep a small common envelope and a typed `data` map, making future event types additive.
 
+## Google Play release checklist
+
+The app now uses Google's UMP consent flow before requesting a bottom banner,
+and Google's immediate in-app update flow when Play reports a newer version.
+Debug builds use Google's official test ad identifiers. Before uploading a
+release, complete all of these steps:
+
+1. Create the Android app in AdMob and create a banner unit. In **Privacy &
+   messaging**, publish the consent message for the countries where the app is
+   available. Never use the checked-in test identifiers for real traffic.
+2. Put the AdMob **app ID** (the value containing `~`) in your user-level
+   `~/.gradle/gradle.properties` as `ADMOB_APP_ID=ca-app-pub-...~...`. Do not
+   put the secret in this repository. Pass the banner **unit ID** (the value containing `/`) to
+   the release build:
+
+   ```bash
+   flutter build appbundle --release \
+     --dart-define=ADMOB_BANNER_ID=ca-app-pub-.../...
+   ```
+
+3. Replace the debug signing configuration in `android/app/build.gradle.kts`
+   with a private upload-key signing configuration. Back up the upload keystore
+   and passwords outside the repository, then enroll in Play App Signing.
+4. Increase both parts of `version` in `pubspec.yaml` for every upload (for
+   example, `1.0.1+2`). Play requires every bundle to have a unique, increasing
+   build number. Publish through an internal testing track first: Play's update
+   API cannot report updates for a locally installed APK.
+5. Complete Play Console's Data safety, Ads, content rating, target audience,
+   app access, and privacy-policy declarations. The privacy policy should
+   describe Firebase Authentication/Firestore, AdMob, account deletion, data
+   retention, and how caregivers can request support.
+6. Test account creation, family permissions, offline/reconnect behavior,
+   notification permissions, consent choices, ad loading, update enforcement,
+   accessibility, and deletion on a physical device from the Play internal
+   testing track. Also configure Crashlytics/performance monitoring before a
+   public launch so production failures can be diagnosed.
+
+Immediate updates are deliberately enforced whenever Google Play reports that
+an update exists. If staged rollouts or optional updates are wanted later, put a
+minimum-supported build number in Firebase Remote Config and only block builds
+below that number instead of requiring every available update.
+
 ## Windows prerequisite: make `flutter` available
 
 The Flutter and FlutterFire commands are currently unavailable if PowerShell reports *“The term 'flutter' is not recognized”*. The Android Studio Flutter plugin does not make a Flutter SDK executable available to every terminal by itself.
