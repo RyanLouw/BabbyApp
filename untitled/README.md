@@ -68,8 +68,25 @@ the first time Android is built.
 
 That Gradle configuration error comes from `google_mobile_ads` 6.x, which is not
 compatible with this project's Gradle 9 / Android Gradle Plugin 9 toolchain.
-The project now requires `google_mobile_ads` 9.1 or newer. After pulling the
-latest revision, remove the old generated state and resolve packages again:
+The project now requires `google_mobile_ads` 9.1 or newer. First verify that the
+checkout actually contains that change. If this command still prints `^6.0.0`,
+the checkout is old and cleaning it cannot select 9.1; pull the latest commit or
+change the constraint before continuing.
+
+**PowerShell** (`PS C:\...>` prompt):
+
+```powershell
+Set-Location C:\dev\BabbyApp\untitled
+Select-String -Path .\pubspec.yaml -Pattern 'google_mobile_ads:'
+# The output must say: google_mobile_ads: ^9.1.0
+C:\dev\flutter\bin\flutter.bat clean
+Remove-Item -Recurse -Force .\.dart_tool -ErrorAction SilentlyContinue
+C:\dev\flutter\bin\flutter.bat pub get
+Select-String -Path .\pubspec.lock -Pattern 'google_mobile_ads' -Context 0,6
+C:\dev\flutter\bin\flutter.bat run
+```
+
+**Command Prompt** (`C:\...>` prompt):
 
 ```bat
 cd /d C:\dev\BabbyApp\untitled
@@ -78,6 +95,11 @@ if exist .dart_tool rmdir /s /q .dart_tool
 C:\dev\flutter\bin\flutter.bat pub get
 C:\dev\flutter\bin\flutter.bat run
 ```
+
+`cd /d` and `if exist ...` are Command Prompt syntax. PowerShell uses
+`Set-Location` and `Remove-Item`; do not paste the Command Prompt block at a
+`PS>` prompt. A leading `^B` is also a pasted control character and must not be
+included in a command.
 
 The Java `System::load` native-access lines are warnings from Gradle and are not
 the cause of this failure. Do not edit the cached package under
@@ -99,10 +121,10 @@ Flutter plugins.
    run `start ms-settings:developers` from Command Prompt).
 2. Turn **Developer Mode** on and accept the confirmation. You do not need to
    enable Device Portal or Device Discovery.
-3. Close Android Studio and all terminals, reopen them, and run:
+3. Close Android Studio and all terminals, reopen them, and run in PowerShell:
 
-   ```bat
-   cd /d C:\dev\BabbyApp\untitled
+   ```powershell
+   Set-Location C:\dev\BabbyApp\untitled
    C:\dev\flutter\bin\flutter.bat clean
    C:\dev\flutter\bin\flutter.bat pub get
    C:\dev\flutter\bin\flutter.bat run
