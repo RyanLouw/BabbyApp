@@ -44,7 +44,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
       appBar: AppBar(title: const Text('Statistics')),
       body: eventsValue.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => const Center(child: Text('Could not load statistics.')),
+        error: (_, _) => const Center(child: Text('Could not load statistics.')),
         data: (allEvents) {
           final events = _babyId == null
               ? allEvents

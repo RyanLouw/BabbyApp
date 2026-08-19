@@ -46,6 +46,15 @@ Write-Host 'Flutter detected:' -ForegroundColor Green
 flutter --version
 flutter doctor -v
 
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+Write-Host "`nInstalling packages from $projectRoot..." -ForegroundColor Green
+Push-Location $projectRoot
+try {
+    flutter pub get
+} finally {
+    Pop-Location
+}
+
 if ($InstallFlutterFire) {
     if (-not (Get-Command dart -ErrorAction SilentlyContinue)) {
         throw 'Dart was not found after configuring Flutter. Close PowerShell, open a new terminal, and rerun this script.'
@@ -55,4 +64,4 @@ if ($InstallFlutterFire) {
     flutterfire --version
 }
 
-Write-Host "`nSetup check complete. New terminals will use the saved PATH." -ForegroundColor Green
+Write-Host "`nSetup complete. Flutter packages are installed and new terminals will use the saved PATH." -ForegroundColor Green

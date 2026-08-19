@@ -24,7 +24,7 @@ class HistoryScreen extends ConsumerWidget {
       appBar: const _HistoryAppBar(),
       body: events.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => const Center(child: Text('Could not load history.')),
+        error: (_, _) => const Center(child: Text('Could not load history.')),
         data: (items) => items.isEmpty
             ? const _HistoryEmpty()
             : ListView.builder(

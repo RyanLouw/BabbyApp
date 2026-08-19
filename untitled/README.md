@@ -4,6 +4,8 @@ A feature-first Flutter/Material 3 Android client for fast, shared newborn-care 
 
 Daily feeding and sleep reminders can be added under **Settings → Care schedule**. Reminders are stored on the device and scheduled with the operating system, so they still alert when the app is closed. Android users must allow notifications and exact alarms when prompted.
 
+> **Missing-package errors after updating?** Run `flutter pub get` from this `untitled` directory whenever `pubspec.yaml` changes. The reminder imports (`flutter_local_notifications`, `flutter_timezone`, and `timezone`) are downloaded by that command; Dart analysis cannot resolve them before package installation. The Windows setup scripts now run this command automatically.
+
 ## Windows prerequisite: make `flutter` available
 
 The Flutter and FlutterFire commands are currently unavailable if PowerShell reports *“The term 'flutter' is not recognized”*. The Android Studio Flutter plugin does not make a Flutter SDK executable available to every terminal by itself.
