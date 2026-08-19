@@ -1,4 +1,4 @@
-# Babby Care
+# NurtureNest
 
 A feature-first Flutter/Material 3 Android client for fast, shared newborn-care tracking. Firebase Authentication owns sessions; Firestore stores `families/{familyId}/members`, `babies`, and each baby's `events`. Event documents keep a small common envelope and a typed `data` map, making future event types additive.
 
@@ -90,13 +90,13 @@ For example, if it prints `C:\dev\flutter\flutter\bin\flutter.bat`, the SDK was 
 
 ### Android only (no FlutterFire CLI required)
 
-1. In the [Firebase console](https://console.firebase.google.com/), create a project with the display name **Babby Care**. Firebase also asks for a globally unique project ID; accept its suggestion (for example, `babby-care-12345`). The project ID does not need to match the Android package name. Google Analytics is optional for this app.
+1. In the [Firebase console](https://console.firebase.google.com/), create a project with the display name **NurtureNest**. Firebase also asks for a globally unique project ID; accept its suggestion (for example, `nurture-nest-12345`). The project ID does not need to match the Android package name. Google Analytics is optional for this app.
 2. Add an **Android app** to that Firebase project with these values:
 
    | Firebase field | Value |
    | --- | --- |
    | Android package name | `com.babbycare.app` |
-   | App nickname | `Babby Care Android` (optional) |
+   | App nickname | `NurtureNest Android` (optional) |
    | Debug signing certificate SHA-1 | Leave blank for email/password authentication |
 
    The package name must match exactly; it is already configured as both `namespace` and `applicationId` in `android/app/build.gradle.kts`.
@@ -120,7 +120,7 @@ For example, if it prints `C:\dev\flutter\flutter\bin\flutter.bat`, the SDK was 
 
 ### Enable Email/Password Authentication
 
-1. Open the [Firebase console](https://console.firebase.google.com/) and select the **Babby Care** project.
+1. Open the [Firebase console](https://console.firebase.google.com/) and select the **NurtureNest** project.
 2. In the left menu, select **Build → Authentication**.
 3. Select **Get started** if this is the first authentication provider.
 4. Open the **Sign-in method** tab, select **Email/Password** under *Native providers*, and turn on the first **Email/Password** switch.
@@ -148,7 +148,7 @@ If Android logs `The email address is badly formatted`, Firebase was reached but
    firebase deploy --only firestore:rules,firestore:indexes
    ```
 
-   When `firebase use --add` asks which project to use, select **Babby Care** and choose an alias such as `default`.
+   When `firebase use --add` asks which project to use, select **NurtureNest** and choose an alias such as `default`.
 
 7. In the Firebase console, open **Firestore Database → Rules** and confirm the deployed rules begin with `rules_version = '2';`. Open **Indexes** and wait until the events index reports **Enabled** before relying on cross-baby history queries.
 

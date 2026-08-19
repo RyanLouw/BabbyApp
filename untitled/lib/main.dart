@@ -12,5 +12,5 @@ Future<void> main() async {
     persistenceEnabled: true,
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
-  runApp(const ProviderScope(child: BabbyApp()));
+  runApp(const ProviderScope(child: NurtureNestApp()));
 }
