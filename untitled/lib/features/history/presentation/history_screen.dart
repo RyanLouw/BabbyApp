@@ -81,7 +81,7 @@ class _HistoryEntry extends ConsumerWidget {
       child: ListTile(
         leading: CircleAvatar(child: Icon(_icon(event.type))),
         title: Text(_description(event)),
-        subtitle: Text('${_time(event.start)} · $babyName'),
+        subtitle: Text('${_dateAndTime(event.start)} · $babyName'),
         trailing: PopupMenuButton<String>(
           onSelected: (value) {
             if (value == 'delete') _confirmDelete(context, ref);
@@ -139,9 +139,11 @@ IconData _icon(BabyEventType type) => switch (type) {
       BabyEventType.growth => Icons.monitor_weight_outlined,
       _ => Icons.note,
     };
-String _time(DateTime value) {
+String _dateAndTime(DateTime value) {
   final local = value.toLocal();
-  return '${local.hour.toString().padLeft(2, '0')}:'
+  return '${local.day.toString().padLeft(2, '0')}/'
+      '${local.month.toString().padLeft(2, '0')}/${local.year} · '
+      '${local.hour.toString().padLeft(2, '0')}:'
       '${local.minute.toString().padLeft(2, '0')}';
 }
 String _duration(Duration value) =>
