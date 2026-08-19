@@ -9,7 +9,7 @@ import '../../events/domain/baby_event.dart';
 import '../domain/care_statistics.dart';
 
 enum StatisticsPeriod {
-  day('Day', 1),
+  day('Today', 1),
   week('Week', 7),
   month('Month', 30),
   threeMonths('3 months', 90),
@@ -49,7 +49,10 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           final events = _babyId == null
               ? allEvents
               : allEvents.where((event) => event.babyId == _babyId).toList();
-          final from = DateTime.now().subtract(Duration(days: _period.days));
+          final now = DateTime.now();
+          final from = _period == StatisticsPeriod.day
+              ? DateTime(now.year, now.month, now.day)
+              : now.subtract(Duration(days: _period.days));
           final statistics = CareStatistics(events, from);
           final baby = _selectedBaby(babies);
           return ListView(
