@@ -4,8 +4,18 @@ import 'package:babby_care/features/family/domain/family.dart';
 import 'package:babby_care/features/statistics/domain/care_statistics.dart';
 import 'package:babby_care/features/statistics/presentation/statistics_screen.dart';
 import 'package:babby_care/features/auth/domain/auth_redirect.dart';
+import 'package:babby_care/features/reminders/domain/care_reminder.dart';
 BabyEvent event(BabyEventType type, DateTime start, {DateTime? end, Map<String,Object?> data=const {}}) => BabyEvent(id:'1',familyId:'f',babyId:'b',type:type,start:start,end:end,createdAt:start,createdBy:'u',updatedAt:start,updatedBy:'u',data:data);
 void main(){
+  test('care reminders round-trip through local storage JSON', () {
+    const reminder = CareReminder(id: 42, type: CareReminderType.feeding, hour: 6, minute: 30, enabled: false);
+    final decoded = CareReminder.fromJson(reminder.toJson());
+    expect(decoded.id, 42);
+    expect(decoded.type, CareReminderType.feeding);
+    expect(decoded.hour, 6);
+    expect(decoded.minute, 30);
+    expect(decoded.enabled, isFalse);
+  });
   test('feeding totals and average use bottle amounts',(){final now=DateTime.utc(2026,1,2);final stats=CareStatistics([event(BabyEventType.feeding,now,data:{'amountMl':90}),event(BabyEventType.feeding,now,data:{'amountMl':110})],now.subtract(const Duration(days:1)));expect(stats.feedCount,2);expect(stats.totalMl,200);expect(stats.averageBottleMl,100);});
   test('breastfeeds do not reduce the average bottle amount',(){final now=DateTime.utc(2026,1,2);final stats=CareStatistics([event(BabyEventType.feeding,now,data:{'amountMl':90}),event(BabyEventType.feeding,now,data:{'kind':'breast'})],now.subtract(const Duration(days:1)));expect(stats.feedCount,2);expect(stats.averageBottleMl,90);});
   test('sleep duration is derived from persisted timestamps',(){final start=DateTime.utc(2026);expect(event(BabyEventType.sleep,start,end:start.add(const Duration(minutes:75))).duration(),const Duration(minutes:75));});

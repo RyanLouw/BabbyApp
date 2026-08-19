@@ -2,6 +2,8 @@
 
 A feature-first Flutter/Material 3 Android client for fast, shared newborn-care tracking. Firebase Authentication owns sessions; Firestore stores `families/{familyId}/members`, `babies`, and each baby's `events`. Event documents keep a small common envelope and a typed `data` map, making future event types additive.
 
+Daily feeding and sleep reminders can be added under **Settings → Care schedule**. Reminders are stored on the device and scheduled with the operating system, so they still alert when the app is closed. Android users must allow notifications and exact alarms when prompted.
+
 ## Windows prerequisite: make `flutter` available
 
 The Flutter and FlutterFire commands are currently unavailable if PowerShell reports *“The term 'flutter' is not recognized”*. The Android Studio Flutter plugin does not make a Flutter SDK executable available to every terminal by itself.
