@@ -50,9 +50,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
               ? allEvents
               : allEvents.where((event) => event.babyId == _babyId).toList();
           final now = DateTime.now();
-          final from = _period == StatisticsPeriod.day
-              ? DateTime(now.year, now.month, now.day)
-              : now.subtract(Duration(days: _period.days));
+          final from = statisticsStart(_period, now);
           final statistics = CareStatistics(events, from);
           final baby = _selectedBaby(babies);
           return ListView(
@@ -120,6 +118,12 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     return null;
   }
 }
+
+@visibleForTesting
+DateTime statisticsStart(StatisticsPeriod period, DateTime now) =>
+    period == StatisticsPeriod.day
+        ? DateTime(now.year, now.month, now.day)
+        : now.subtract(Duration(days: period.days));
 
 class _CareTrends extends StatelessWidget {
   const _CareTrends({required this.events, required this.days});
