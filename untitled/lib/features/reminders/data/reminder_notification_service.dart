@@ -33,7 +33,7 @@ class ReminderNotificationService {
     if (!isSupported) return;
     timezone_data.initializeTimeZones();
     final localTimezone = await FlutterTimezone.getLocalTimezone();
-    timezone.setLocalLocation(timezone.getLocation(localTimezone.identifier));
+    timezone.setLocalLocation(timezone.getLocation(localTimezone));
 
     await _notifications.initialize(
       const InitializationSettings(
