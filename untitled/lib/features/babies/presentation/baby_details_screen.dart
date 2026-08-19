@@ -1,6 +1,10 @@
+import 'dart:typed_data';
+
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/providers.dart';
@@ -21,11 +25,14 @@ class _BabyDetailsScreenState extends ConsumerState<BabyDetailsScreen> {
   final _weight = TextEditingController();
   final _length = TextEditingController();
   bool _saving = false;
+  bool _uploadingImage = false;
+  String? _profileImageUrl;
 
   @override
   void initState() {
     super.initState();
     _name = TextEditingController(text: widget.baby.name);
+    _profileImageUrl = widget.baby.profileImageUrl;
   }
 
   @override
@@ -46,10 +53,55 @@ class _BabyDetailsScreenState extends ConsumerState<BabyDetailsScreen> {
       dateOfBirth: widget.baby.dateOfBirth,
       createdAt: widget.baby.createdAt,
       createdBy: widget.baby.createdBy,
-      profileImage: widget.baby.profileImage,
+      profileImageUrl: _profileImageUrl,
     );
     await ref.read(familyRepositoryProvider).updateBaby(baby);
     if (mounted) setState(() => _saving = false);
+  }
+
+  Future<void> _chooseProfileImage() async {
+    final image = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 82,
+      maxWidth: 1200,
+    );
+    if (image == null) return;
+    setState(() => _uploadingImage = true);
+    try {
+      final Uint8List bytes = await image.readAsBytes();
+      final reference = FirebaseStorage.instance.ref(
+        'families/${widget.baby.familyId}/babies/${widget.baby.id}/profile.jpg',
+      );
+      await reference.putData(
+        bytes,
+        SettableMetadata(contentType: image.mimeType ?? 'image/jpeg'),
+      );
+      final url = await reference.getDownloadURL();
+      final updated = Baby(
+        id: widget.baby.id,
+        familyId: widget.baby.familyId,
+        name: _name.text.trim().isEmpty ? widget.baby.name : _name.text.trim(),
+        dateOfBirth: widget.baby.dateOfBirth,
+        createdAt: widget.baby.createdAt,
+        createdBy: widget.baby.createdBy,
+        profileImageUrl: url,
+      );
+      await ref.read(familyRepositoryProvider).updateBaby(updated);
+      if (mounted) {
+        setState(() => _profileImageUrl = url);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile photo updated.')),
+        );
+      }
+    } on Exception {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not upload the photo. Please try again.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingImage = false);
+    }
   }
 
   Future<void> _saveMeasurement() async {
@@ -98,6 +150,34 @@ class _BabyDetailsScreenState extends ConsumerState<BabyDetailsScreen> {
         children: [
           Text('Baby details', style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 16),
+          Center(
+            child: Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                CircleAvatar(
+                  radius: 52,
+                  backgroundImage: _profileImageUrl == null
+                      ? null
+                      : NetworkImage(_profileImageUrl!),
+                  child: _profileImageUrl == null
+                      ? Text(widget.baby.name.characters.first,
+                          style: Theme.of(context).textTheme.headlineMedium)
+                      : null,
+                ),
+                IconButton.filled(
+                  tooltip: 'Choose profile photo',
+                  onPressed: _uploadingImage ? null : _chooseProfileImage,
+                  icon: _uploadingImage
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.add_a_photo_outlined),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
           TextField(
             controller: _name,
             textCapitalization: TextCapitalization.words,

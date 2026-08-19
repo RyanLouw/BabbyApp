@@ -118,7 +118,14 @@ class _BabyCard extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(
                     children: [
-                      CircleAvatar(child: Text(baby.name.characters.first)),
+                      CircleAvatar(
+                        backgroundImage: baby.profileImageUrl == null
+                            ? null
+                            : NetworkImage(baby.profileImageUrl!),
+                        child: baby.profileImageUrl == null
+                            ? Text(baby.name.characters.first)
+                            : null,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(

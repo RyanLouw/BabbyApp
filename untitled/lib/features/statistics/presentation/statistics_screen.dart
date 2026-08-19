@@ -9,7 +9,7 @@ import '../../events/domain/baby_event.dart';
 import '../domain/care_statistics.dart';
 
 enum StatisticsPeriod {
-  day('Day', 1),
+  day('Today', 1),
   week('Week', 7),
   month('Month', 30),
   threeMonths('3 months', 90),
@@ -49,7 +49,8 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           final events = _babyId == null
               ? allEvents
               : allEvents.where((event) => event.babyId == _babyId).toList();
-          final from = DateTime.now().subtract(Duration(days: _period.days));
+          final now = DateTime.now();
+          final from = statisticsStart(_period, now);
           final statistics = CareStatistics(events, from);
           final baby = _selectedBaby(babies);
           return ListView(
@@ -90,6 +91,8 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
               const SizedBox(height: 20),
               _CareOverview(statistics: statistics),
               const SizedBox(height: 20),
+              _CareTrends(events: statistics.events, days: _period.days),
+              const SizedBox(height: 20),
               if (baby == null)
                 const Card(
                   child: Padding(
@@ -114,6 +117,148 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     }
     return null;
   }
+}
+
+@visibleForTesting
+DateTime statisticsStart(StatisticsPeriod period, DateTime now) =>
+    period == StatisticsPeriod.day
+        ? DateTime(now.year, now.month, now.day)
+        : now.subtract(Duration(days: period.days));
+
+class _CareTrends extends StatelessWidget {
+  const _CareTrends({required this.events, required this.days});
+  final List<BabyEvent> events;
+  final int days;
+
+  @override
+  Widget build(BuildContext context) {
+    final bucketCount = math.min(days, 14);
+    final today = DateUtils.dateOnly(DateTime.now());
+    final dates = List.generate(
+      bucketCount,
+      (index) => today.subtract(Duration(days: bucketCount - index - 1)),
+    );
+    final feeding = dates.map((date) {
+      return events.where((event) =>
+          event.type == BabyEventType.feeding &&
+          DateUtils.isSameDay(event.start.toLocal(), date)).fold<double>(
+        0,
+        (sum, event) => sum + ((event.data['amountMl'] as num?)?.toDouble() ?? 0),
+      );
+    }).toList();
+    final bowelMovements = dates.map((date) {
+      return events.where((event) {
+        final kind = event.data['kind'];
+        return event.type == BabyEventType.nappy &&
+            (kind == NappyType.dirty.name || kind == NappyType.both.name) &&
+            DateUtils.isSameDay(event.start.toLocal(), date);
+      }).length.toDouble();
+    }).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Care trends', style: Theme.of(context).textTheme.headlineSmall),
+        const SizedBox(height: 4),
+        Text(bucketCount < days ? 'Daily totals for the last 14 days' : 'Daily totals'),
+        const SizedBox(height: 12),
+        _BarChartCard(
+          title: 'Feeding',
+          unit: 'ml',
+          values: feeding,
+          dates: dates,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+        _BarChartCard(
+          title: 'Bowel movements',
+          unit: 'changes',
+          values: bowelMovements,
+          dates: dates,
+          color: Theme.of(context).colorScheme.tertiary,
+        ),
+      ],
+    );
+  }
+}
+
+class _BarChartCard extends StatelessWidget {
+  const _BarChartCard({
+    required this.title,
+    required this.unit,
+    required this.values,
+    required this.dates,
+    required this.color,
+  });
+  final String title, unit;
+  final List<double> values;
+  final List<DateTime> dates;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = values.fold<double>(0, (sum, value) => sum + value);
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
+              const Spacer(),
+              Text('${total.round()} $unit'),
+            ]),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 140,
+              width: double.infinity,
+              child: CustomPaint(painter: _BarChartPainter(values: values, color: color)),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('${dates.first.day}/${dates.first.month}'),
+                Text('${dates.last.day}/${dates.last.month}'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BarChartPainter extends CustomPainter {
+  const _BarChartPainter({required this.values, required this.color});
+  final List<double> values;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final maximum = math.max(
+      1.0,
+      values.fold<double>(0, (current, value) => math.max(current, value)),
+    );
+    final slot = size.width / values.length;
+    final paint = Paint()..color = color;
+    final baseline = Paint()
+      ..color = color.withValues(alpha: 0.2)
+      ..strokeWidth = 1;
+    canvas.drawLine(Offset(0, size.height), Offset(size.width, size.height), baseline);
+    for (var index = 0; index < values.length; index++) {
+      final height = values[index] / maximum * (size.height - 8);
+      final rect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(index * slot + slot * 0.18, size.height - height,
+            slot * 0.64, height),
+        const Radius.circular(4),
+      );
+      canvas.drawRRect(rect, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_BarChartPainter oldDelegate) =>
+      oldDelegate.values != values || oldDelegate.color != color;
 }
 
 class _CareOverview extends StatelessWidget {
