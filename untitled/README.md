@@ -2,7 +2,7 @@
 
 A feature-first Flutter/Material 3 Android client for fast, shared newborn-care tracking. Firebase Authentication owns sessions; Firestore stores `families/{familyId}/members`, `babies`, and each baby's `events`. Event documents keep a small common envelope and a typed `data` map, making future event types additive.
 
-Daily feeding and sleep reminders can be added under **Settings → Care schedule**. Reminders are stored on the device and scheduled with the operating system, so they still alert when the app is closed. Android users must allow notifications and exact alarms when prompted.
+Daily feeding and sleep reminders can be added under **Settings → Care schedule**. Reminders are stored on the device and scheduled with the operating system, so they still alert with the device's notification sound and vibration when the app is closed. Android users must allow notifications and exact alarms when prompted. The device can still silence reminders when Do Not Disturb or silent mode is enabled.
 
 > **Missing-package errors after updating?** Run `flutter pub get` from this `untitled` directory whenever `pubspec.yaml` changes. The reminder imports (`flutter_local_notifications`, `flutter_timezone`, and `timezone`) are downloaded by that command; Dart analysis cannot resolve them before package installation. The Windows setup scripts now run this command automatically.
 

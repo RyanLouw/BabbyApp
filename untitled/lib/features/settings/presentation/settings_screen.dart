@@ -55,7 +55,7 @@ class SettingsScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'Get a daily notification at each selected feeding or sleep time, even when the app is closed.',
+              'Get a daily sound and vibration at each selected feeding or sleep time, even when the app is closed.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),

@@ -21,12 +21,15 @@ class ReminderNotificationService {
           defaultTargetPlatform == TargetPlatform.iOS);
 
   static const _androidDetails = AndroidNotificationDetails(
-    'care_reminders',
-    'Care reminders',
-    channelDescription: 'Daily feeding and sleep reminders',
+    'audible_care_reminders',
+    'Audible care reminders',
+    channelDescription: 'Daily feeding and sleep reminders with sound',
     importance: Importance.high,
     priority: Priority.high,
-    category: AndroidNotificationCategory.reminder,
+    category: AndroidNotificationCategory.alarm,
+    audioAttributesUsage: AudioAttributesUsage.alarm,
+    playSound: true,
+    enableVibration: true,
   );
 
   Future<void> initialize() async {
@@ -86,7 +89,10 @@ class ReminderNotificationService {
       next,
       const NotificationDetails(
         android: _androidDetails,
-        iOS: DarwinNotificationDetails(),
+        iOS: DarwinNotificationDetails(
+          presentSound: true,
+          sound: 'default',
+        ),
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.time,
