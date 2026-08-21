@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers.dart';
 import '../../babies/domain/baby.dart';
 import '../../events/domain/baby_event.dart';
+import '../../events/presentation/record_event_sheet.dart';
 
 class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
@@ -18,13 +19,13 @@ class HistoryScreen extends ConsumerWidget {
       );
     }
     final babies = ref.watch(babiesProvider(familyId)).value ?? const <Baby>[];
-    final names = {for (final baby in babies) baby.id: baby.name};
+    final babiesById = {for (final baby in babies) baby.id: baby};
     final events = ref.watch(familyEventsProvider(familyId));
     return Scaffold(
       appBar: const _HistoryAppBar(),
       body: events.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => const Center(child: Text('Could not load history.')),
+        error: (_, _) => const Center(child: Text('Could not load history.')),
         data: (items) => items.isEmpty
             ? const _HistoryEmpty()
             : ListView.builder(
@@ -34,7 +35,7 @@ class HistoryScreen extends ConsumerWidget {
                   final event = items[index];
                   return _HistoryEntry(
                     event: event,
-                    babyName: names[event.babyId] ?? 'Baby',
+                    baby: babiesById[event.babyId],
                   );
                 },
               ),
@@ -69,10 +70,10 @@ class _HistoryEmpty extends StatelessWidget {
 }
 
 class _HistoryEntry extends ConsumerWidget {
-  const _HistoryEntry({required this.event, required this.babyName});
+  const _HistoryEntry({required this.event, required this.baby});
 
   final BabyEvent event;
-  final String babyName;
+  final Baby? baby;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -81,15 +82,33 @@ class _HistoryEntry extends ConsumerWidget {
       child: ListTile(
         leading: CircleAvatar(child: Icon(_icon(event.type))),
         title: Text(_description(event)),
-        subtitle: Text('${_dateAndTime(event.start)} · $babyName'),
+        subtitle: Text('${_dateAndTime(event.start)} · ${baby?.name ?? 'Baby'}'),
         trailing: PopupMenuButton<String>(
           onSelected: (value) {
+            if (value == 'edit') _edit(context);
             if (value == 'delete') _confirmDelete(context, ref);
           },
-          itemBuilder: (_) => const [
-            PopupMenuItem(value: 'delete', child: Text('Delete')),
+          itemBuilder: (_) => [
+            if (baby != null)
+              const PopupMenuItem(value: 'edit', child: Text('Edit')),
+            const PopupMenuItem(value: 'delete', child: Text('Delete')),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _edit(BuildContext context) async {
+    final selectedBaby = baby;
+    if (selectedBaby == null) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => RecordEventSheet(
+        familyId: event.familyId,
+        baby: selectedBaby,
+        event: event,
       ),
     );
   }

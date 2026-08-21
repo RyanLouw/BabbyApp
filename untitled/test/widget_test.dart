@@ -157,12 +157,13 @@ void main() {
       updatedBy: 'u',
       data: const {'amountMl': 120, 'milkType': 'formula'},
     );
+    final repository = _EventRepository([feed]);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           currentFamilyIdProvider.overrideWith((ref) => Stream.value('f')),
           babiesProvider('f').overrideWith((ref) => Stream.value([baby])),
-          eventRepositoryProvider.overrideWithValue(_EventRepository([feed])),
+          eventRepositoryProvider.overrideWithValue(repository),
         ],
         child: const MaterialApp(home: HistoryScreen()),
       ),
@@ -171,6 +172,17 @@ void main() {
 
     expect(find.textContaining('120 ml'), findsOneWidget);
     expect(find.textContaining('Amelia'), findsOneWidget);
+
+    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit Feed — Amelia'), findsOneWidget);
+    expect(find.text('120'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).first, '150');
+    await tester.tap(find.text('Save changes'));
+    await tester.pumpAndSettle();
+    expect(repository.updatedEvent?.data['amountMl'], 150);
   });
 
   testWidgets('statistics period can be changed', (tester) async {
@@ -200,6 +212,9 @@ void main() {
         overrides: [
           currentFamilyIdProvider.overrideWith((ref) => Stream.value('f')),
           babiesProvider('f').overrideWith((ref) => Stream.value([baby])),
+          feedingGoalsProvider(
+            (familyId: 'f', babyId: 'a'),
+          ).overrideWith((ref) => Stream.value([])),
           eventRepositoryProvider.overrideWithValue(_EventRepository([growth])),
         ],
         child: const MaterialApp(home: StatisticsScreen()),
@@ -212,11 +227,13 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Amelia').last);
     await tester.pumpAndSettle();
-    expect(find.text('3.40 kg'), findsOneWidget);
-    expect(find.text('51.00 cm'), findsOneWidget);
     await tester.tap(find.text('Month'));
     await tester.pump();
     expect(find.text('Month'), findsOneWidget);
+    await tester.drag(find.byType(ListView), const Offset(0, -600));
+    await tester.pumpAndSettle();
+    expect(find.text('3.40 kg'), findsOneWidget);
+    expect(find.text('51.00 cm'), findsOneWidget);
   });
 
   testWidgets('registration rejects a display name entered as an email', (
@@ -244,6 +261,7 @@ class _EventRepository implements BabyEventRepository {
   _EventRepository(this.events);
 
   final List<BabyEvent> events;
+  BabyEvent? updatedEvent;
 
   @override
   Stream<List<BabyEvent>> watchEvents({
@@ -257,7 +275,9 @@ class _EventRepository implements BabyEventRepository {
   Future<void> createEvent(BabyEvent event) async {}
 
   @override
-  Future<void> updateEvent(BabyEvent event) async {}
+  Future<void> updateEvent(BabyEvent event) async {
+    updatedEvent = event;
+  }
 
   @override
   Future<void> deleteEvent({

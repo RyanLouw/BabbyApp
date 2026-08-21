@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/providers.dart';
 import '../../events/domain/baby_event.dart';
+import '../../goals/domain/feeding_goal.dart';
 import '../domain/baby.dart';
 
 class BabyDetailsScreen extends ConsumerStatefulWidget {
@@ -219,8 +220,141 @@ class _BabyDetailsScreenState extends ConsumerState<BabyDetailsScreen> {
             icon: const Icon(Icons.monitor_weight_outlined),
             label: const Text('Save measurement'),
           ),
+          const SizedBox(height: 32),
+          _FeedingGoalSection(baby: widget.baby),
         ],
       ),
     );
   }
+}
+
+class _FeedingGoalSection extends ConsumerStatefulWidget {
+  const _FeedingGoalSection({required this.baby});
+
+  final Baby baby;
+
+  @override
+  ConsumerState<_FeedingGoalSection> createState() =>
+      _FeedingGoalSectionState();
+}
+
+class _FeedingGoalSectionState extends ConsumerState<_FeedingGoalSection> {
+  final _dailyMl = TextEditingController();
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _dailyMl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final dailyMl = int.tryParse(_dailyMl.text);
+    final user = FirebaseAuth.instance.currentUser;
+    if (dailyMl == null || dailyMl <= 0 || user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a daily feeding target in ml.')),
+      );
+      return;
+    }
+    setState(() => _saving = true);
+    final now = DateTime.now().toUtc();
+    try {
+      await ref.read(feedingGoalRepositoryProvider).createGoal(
+            FeedingGoal(
+              id: const Uuid().v4(),
+              familyId: widget.baby.familyId,
+              babyId: widget.baby.id,
+              dailyMl: dailyMl,
+              effectiveFrom: now,
+              createdAt: now,
+              createdBy: user.uid,
+            ),
+          );
+      _dailyMl.clear();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('New feeding target saved.')),
+        );
+      }
+    } on Exception {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Only the family owner can change targets.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final goals = ref.watch(
+      feedingGoalsProvider(
+        (familyId: widget.baby.familyId, babyId: widget.baby.id),
+      ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Daily feeding target',
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Save a new target whenever your baby’s needs change. Previous targets stay in the history and keep past statistics accurate.',
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _dailyMl,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'New daily target',
+            suffixText: 'ml',
+          ),
+        ),
+        const SizedBox(height: 12),
+        FilledButton.icon(
+          onPressed: _saving ? null : _save,
+          icon: const Icon(Icons.flag_outlined),
+          label: Text(_saving ? 'Saving…' : 'Save new target'),
+        ),
+        const SizedBox(height: 12),
+        goals.when(
+          loading: () => const LinearProgressIndicator(),
+          error: (_, _) => const Text('Could not load feeding targets.'),
+          data: (items) {
+            if (items.isEmpty) {
+              return const Text(
+                'No target set. Statistics will continue showing the standard feeding graph.',
+              );
+            }
+            final newestFirst = items.reversed.toList();
+            return ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: Text('Current target: ${newestFirst.first.dailyMl} ml/day'),
+              subtitle: Text('${items.length} saved target${items.length == 1 ? '' : 's'}'),
+              children: [
+                for (final goal in newestFirst)
+                  ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.history),
+                    title: Text('${goal.dailyMl} ml per day'),
+                    subtitle: Text('From ${_goalDate(goal.effectiveFrom)}'),
+                  ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+String _goalDate(DateTime value) {
+  final local = value.toLocal();
+  return '${local.day.toString().padLeft(2, '0')}/'
+      '${local.month.toString().padLeft(2, '0')}/${local.year}';
 }

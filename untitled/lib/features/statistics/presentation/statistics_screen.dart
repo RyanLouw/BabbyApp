@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers.dart';
 import '../../babies/domain/baby.dart';
 import '../../events/domain/baby_event.dart';
+import '../../goals/domain/feeding_goal.dart';
 import '../domain/care_statistics.dart';
 
 enum StatisticsPeriod {
@@ -44,7 +45,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
       appBar: AppBar(title: const Text('Statistics')),
       body: eventsValue.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => const Center(child: Text('Could not load statistics.')),
+        error: (_, _) => const Center(child: Text('Could not load statistics.')),
         data: (allEvents) {
           final events = _babyId == null
               ? allEvents
@@ -53,6 +54,16 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           final from = statisticsStart(_period, now);
           final statistics = CareStatistics(events, from);
           final baby = _selectedBaby(babies);
+          final goals = _babyId == null
+              ? const <FeedingGoal>[]
+              : ref
+                      .watch(
+                        feedingGoalsProvider(
+                          (familyId: familyId, babyId: _babyId!),
+                        ),
+                      )
+                      .value ??
+                  const <FeedingGoal>[];
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -91,7 +102,11 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
               const SizedBox(height: 20),
               _CareOverview(statistics: statistics),
               const SizedBox(height: 20),
-              _CareTrends(events: statistics.events, days: _period.days),
+              _CareTrends(
+                events: statistics.events,
+                days: _period.days,
+                goals: goals,
+              ),
               const SizedBox(height: 20),
               if (baby == null)
                 const Card(
@@ -126,9 +141,14 @@ DateTime statisticsStart(StatisticsPeriod period, DateTime now) =>
         : now.subtract(Duration(days: period.days));
 
 class _CareTrends extends StatelessWidget {
-  const _CareTrends({required this.events, required this.days});
+  const _CareTrends({
+    required this.events,
+    required this.days,
+    required this.goals,
+  });
   final List<BabyEvent> events;
   final int days;
+  final List<FeedingGoal> goals;
 
   @override
   Widget build(BuildContext context) {
@@ -161,13 +181,16 @@ class _CareTrends extends StatelessWidget {
         const SizedBox(height: 4),
         Text(bucketCount < days ? 'Daily totals for the last 14 days' : 'Daily totals'),
         const SizedBox(height: 12),
-        _BarChartCard(
-          title: 'Feeding',
-          unit: 'ml',
-          values: feeding,
-          dates: dates,
-          color: Theme.of(context).colorScheme.primary,
-        ),
+        if (goals.isEmpty)
+          _BarChartCard(
+            title: 'Feeding',
+            unit: 'ml',
+            values: feeding,
+            dates: dates,
+            color: Theme.of(context).colorScheme.primary,
+          )
+        else
+          _FeedingGoalCard(events: events, goals: goals, days: days),
         _BarChartCard(
           title: 'Bowel movements',
           unit: 'changes',
@@ -176,6 +199,115 @@ class _CareTrends extends StatelessWidget {
           color: Theme.of(context).colorScheme.tertiary,
         ),
       ],
+    );
+  }
+}
+
+class _FeedingGoalCard extends StatelessWidget {
+  const _FeedingGoalCard({
+    required this.events,
+    required this.goals,
+    required this.days,
+  });
+
+  final List<BabyEvent> events;
+  final List<FeedingGoal> goals;
+  final int days;
+
+  @override
+  Widget build(BuildContext context) {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final dates = List.generate(
+      days,
+      (index) => today.subtract(Duration(days: days - index - 1)),
+    );
+    final target = dates.fold<int>(0, (total, date) {
+      final endOfDay = date.add(const Duration(days: 1)).subtract(
+            const Duration(microseconds: 1),
+          );
+      return total + (feedingGoalOn(goals, endOfDay)?.dailyMl ?? 0);
+    });
+    final consumed = events
+        .where(
+          (event) =>
+              event.type == BabyEventType.feeding &&
+              !event.start.toLocal().isBefore(dates.first) &&
+              feedingGoalOn(
+                    goals,
+                    DateUtils.dateOnly(event.start.toLocal())
+                        .add(const Duration(days: 1))
+                        .subtract(const Duration(microseconds: 1)),
+                  ) !=
+                  null,
+        )
+        .fold<int>(
+          0,
+          (total, event) =>
+              total + ((event.data['amountMl'] as num?)?.round() ?? 0),
+        );
+    final progress = target == 0 ? 0.0 : consumed / target;
+    final percentage = (progress * 100).round();
+    final remaining = math.max(0, target - consumed);
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            SizedBox.square(
+              dimension: 112,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox.square(
+                    dimension: 100,
+                    child: CircularProgressIndicator(
+                      value: progress.clamp(0.0, 1.0).toDouble(),
+                      strokeWidth: 12,
+                      strokeCap: StrokeCap.round,
+                      backgroundColor: Theme.of(context)
+                          .colorScheme
+                          .primaryContainer,
+                    ),
+                  ),
+                  Text(
+                    '$percentage%',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    progress >= 1 ? 'Target reached!' : 'Feeding target',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '$consumed of $target ml',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(progress >= 1
+                      ? '${consumed - target} ml above the target'
+                      : '$remaining ml still to go'),
+                  if (goals.length > 1) ...[
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Target adjusted using the saved goal history.',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

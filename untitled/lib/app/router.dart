@@ -21,20 +21,20 @@ final router = GoRouter(
     location: state.matchedLocation,
   ),
   routes: [
-    GoRoute(path: '/login', builder: (_, __) => const AuthScreen()),
+    GoRoute(path: '/login', builder: (_, _) => const AuthScreen()),
     StatefulShellRoute.indexedStack(
-      builder: (_, __, shell) => AppShell(shell: shell),
+      builder: (_, _, shell) => AppShell(shell: shell),
       branches: [
         StatefulShellBranch(
           routes: [
-            GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
+            GoRoute(path: '/home', builder: (_, _) => const HomeScreen()),
           ],
         ),
         StatefulShellBranch(
           routes: [
             GoRoute(
               path: '/history',
-              builder: (_, __) => const HistoryScreen(),
+              builder: (_, _) => const HistoryScreen(),
             ),
           ],
         ),
@@ -42,7 +42,7 @@ final router = GoRouter(
           routes: [
             GoRoute(
               path: '/stats',
-              builder: (_, __) => const StatisticsScreen(),
+              builder: (_, _) => const StatisticsScreen(),
             ),
           ],
         ),
@@ -50,7 +50,7 @@ final router = GoRouter(
           routes: [
             GoRoute(
               path: '/settings',
-              builder: (_, __) => const SettingsScreen(),
+              builder: (_, _) => const SettingsScreen(),
             ),
           ],
         ),

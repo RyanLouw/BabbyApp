@@ -10,6 +10,8 @@ import '../features/events/data/firestore_event_repository.dart';
 import '../features/events/domain/event_repository.dart';
 import '../features/events/domain/baby_event.dart';
 import '../features/family/data/family_repository.dart';
+import '../features/goals/data/feeding_goal_repository.dart';
+import '../features/goals/domain/feeding_goal.dart';
 
 final authRepositoryProvider = Provider(
   (ref) => AuthRepository(FirebaseAuth.instance),
@@ -22,6 +24,16 @@ final eventRepositoryProvider = Provider<BabyEventRepository>(
 );
 final familyRepositoryProvider = Provider(
   (ref) => FamilyRepository(FirebaseFirestore.instance, FirebaseAuth.instance),
+);
+final feedingGoalRepositoryProvider = Provider(
+  (ref) => FeedingGoalRepository(FirebaseFirestore.instance),
+);
+final feedingGoalsProvider = StreamProvider.family<
+    List<FeedingGoal>, ({String familyId, String babyId})>(
+  (ref, key) => ref.watch(feedingGoalRepositoryProvider).watchGoals(
+        familyId: key.familyId,
+        babyId: key.babyId,
+      ),
 );
 final currentFamilyIdProvider = StreamProvider<String?>(
   (ref) => ref.watch(familyRepositoryProvider).watchCurrentFamilyId(),
