@@ -4,6 +4,8 @@ A feature-first Flutter/Material 3 Android client for fast, shared newborn-care 
 
 Daily feeding and sleep reminders can be added under **Settings → Care schedule**. Reminders are stored on the device and scheduled with the operating system, so they still alert with the device's notification sound and vibration when the app is closed. Android users must allow notifications and exact alarms when prompted. The device can still silence reminders when Do Not Disturb or silent mode is enabled.
 
+Each baby can also have an effective-dated daily feeding target under **Settings → Babies → Baby details**. Statistics scale that target across Today, Week, Month, 3 months, 6 months, and Year. Saving a new target appends to the target history rather than overwriting it, so older statistics continue using the target that applied at that time. Deploy the included Firestore rules after updating so family members can read targets and owners can add new ones.
+
 > **Missing-package errors after updating?** Run `flutter pub get` from this `untitled` directory whenever `pubspec.yaml` changes. The reminder imports (`flutter_local_notifications`, `flutter_timezone`, and `timezone`) are downloaded by that command; Dart analysis cannot resolve them before package installation. The Windows setup scripts now run this command automatically.
 
 ## Windows prerequisite: make `flutter` available

@@ -27,6 +27,13 @@ service cloud.firestore {
           allow create, update: if member(familyId) && request.resource.data.familyId == familyId && request.resource.data.babyId == babyId;
           allow delete: if member(familyId);
         }
+        match /feedingGoals/{goalId} {
+          allow read: if member(familyId);
+          allow create: if owner(familyId) &&
+            request.resource.data.familyId == familyId &&
+            request.resource.data.babyId == babyId;
+          allow update, delete: if false;
+        }
       }
     }
   }

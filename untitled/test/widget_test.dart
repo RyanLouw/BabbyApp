@@ -212,6 +212,9 @@ void main() {
         overrides: [
           currentFamilyIdProvider.overrideWith((ref) => Stream.value('f')),
           babiesProvider('f').overrideWith((ref) => Stream.value([baby])),
+          feedingGoalsProvider(
+            (familyId: 'f', babyId: 'a'),
+          ).overrideWith((ref) => Stream.value([])),
           eventRepositoryProvider.overrideWithValue(_EventRepository([growth])),
         ],
         child: const MaterialApp(home: StatisticsScreen()),
