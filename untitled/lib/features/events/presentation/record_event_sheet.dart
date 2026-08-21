@@ -13,11 +13,13 @@ class RecordEventSheet extends ConsumerStatefulWidget {
     this.familyId,
     this.baby,
     this.initialType,
+    this.event,
   });
 
   final String? familyId;
   final Baby? baby;
   final BabyEventType? initialType;
+  final BabyEvent? event;
 
   @override
   ConsumerState<RecordEventSheet> createState() => _RecordEventSheetState();
@@ -35,7 +37,27 @@ class _RecordEventSheetState extends ConsumerState<RecordEventSheet> {
   @override
   void initState() {
     super.initState();
-    _type = widget.initialType;
+    final event = widget.event;
+    _type = event?.type ?? widget.initialType;
+    if (event == null) return;
+    _time = event.start.toLocal();
+    _notes.text = event.notes ?? '';
+    _amount.text = switch (event.data['amountMl']) {
+      final num value when value == value.truncateToDouble() =>
+        value.toInt().toString(),
+      final num value => value.toString(),
+      _ => '',
+    };
+    _milk = _enumByName(
+      MilkType.values,
+      event.data['milkType'],
+      MilkType.formula,
+    );
+    _nappy = _enumByName(
+      NappyType.values,
+      event.data['kind'],
+      NappyType.wet,
+    );
   }
 
   @override
@@ -67,8 +89,9 @@ class _RecordEventSheetState extends ConsumerState<RecordEventSheet> {
     final type = _type;
     final baby = widget.baby;
     final familyId = widget.familyId;
-    final user = FirebaseAuth.instance.currentUser;
-    if (type == null || baby == null || familyId == null || user == null) return;
+    final existing = widget.event;
+    final userId = existing?.updatedBy ?? FirebaseAuth.instance.currentUser?.uid;
+    if (type == null || baby == null || familyId == null || userId == null) return;
     final amount = int.tryParse(_amount.text);
     if (type == BabyEventType.feeding && (amount == null || amount <= 0)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -86,6 +109,7 @@ class _RecordEventSheetState extends ConsumerState<RecordEventSheet> {
     setState(() => _saving = true);
     final now = DateTime.now().toUtc();
     final data = <String, Object?>{
+      ...?existing?.data,
       if (type == BabyEventType.feeding) ...{
         'kind': 'bottle',
         'amountMl': amount,
@@ -94,33 +118,42 @@ class _RecordEventSheetState extends ConsumerState<RecordEventSheet> {
       if (type == BabyEventType.nappy) 'kind': _nappy.name,
     };
     final event = BabyEvent(
-      id: const Uuid().v4(),
+      id: existing?.id ?? const Uuid().v4(),
       familyId: familyId,
       babyId: baby.id,
       type: type,
       start: _time.toUtc(),
-      createdAt: now,
-      createdBy: user.uid,
+      createdAt: existing?.createdAt ?? now,
+      createdBy: existing?.createdBy ?? userId,
       updatedAt: now,
-      updatedBy: user.uid,
+      updatedBy: userId,
+      end: existing?.end,
       notes: _notes.text.trim().isEmpty ? null : _notes.text.trim(),
       data: data,
     );
     try {
-      await ref.read(eventRepositoryProvider).createEvent(event);
+      if (existing == null) {
+        await ref.read(eventRepositoryProvider).createEvent(event);
+      } else {
+        await ref.read(eventRepositoryProvider).updateEvent(event);
+      }
       if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${baby.name} — ${_successLabel(type)} recorded'),
-          action: SnackBarAction(
-            label: 'UNDO',
-            onPressed: () => ref.read(eventRepositoryProvider).deleteEvent(
-                  familyId: familyId,
-                  babyId: baby.id,
-                  eventId: event.id,
-                ),
-          ),
+          content: Text(existing == null
+              ? '${baby.name} — ${_successLabel(type)} recorded'
+              : '${baby.name} — ${_title(type).toLowerCase()} updated'),
+          action: existing == null
+              ? SnackBarAction(
+                  label: 'UNDO',
+                  onPressed: () => ref.read(eventRepositoryProvider).deleteEvent(
+                        familyId: familyId,
+                        babyId: baby.id,
+                        eventId: event.id,
+                      ),
+                )
+              : null,
         ),
       );
     } on Exception {
@@ -146,7 +179,7 @@ class _RecordEventSheetState extends ConsumerState<RecordEventSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              '${_title(_type!)} — ${widget.baby!.name}',
+              '${widget.event == null ? '' : 'Edit '}${_title(_type!)} — ${widget.baby!.name}',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 18),
@@ -205,7 +238,11 @@ class _RecordEventSheetState extends ConsumerState<RecordEventSheet> {
               onPressed: _saving ? null : _save,
               child: _saving
                   ? const CircularProgressIndicator()
-                  : Text(_type == BabyEventType.sleep ? 'Start sleep' : 'Save'),
+                  : Text(widget.event != null
+                      ? 'Save changes'
+                      : _type == BabyEventType.sleep
+                          ? 'Start sleep'
+                          : 'Save'),
             ),
           ],
         ),
@@ -267,3 +304,10 @@ String _nappyLabel(NappyType value) => switch (value) {
 String _formatTime(DateTime value) =>
     '${value.day}/${value.month} ${value.hour.toString().padLeft(2, '0')}:'
     '${value.minute.toString().padLeft(2, '0')}';
+
+T _enumByName<T extends Enum>(List<T> values, Object? name, T fallback) {
+  for (final value in values) {
+    if (value.name == name) return value;
+  }
+  return fallback;
+}
