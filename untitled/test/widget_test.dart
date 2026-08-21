@@ -212,11 +212,13 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Amelia').last);
     await tester.pumpAndSettle();
-    expect(find.text('3.40 kg'), findsOneWidget);
-    expect(find.text('51.00 cm'), findsOneWidget);
     await tester.tap(find.text('Month'));
     await tester.pump();
     expect(find.text('Month'), findsOneWidget);
+    await tester.drag(find.byType(ListView), const Offset(0, -600));
+    await tester.pumpAndSettle();
+    expect(find.text('3.40 kg'), findsOneWidget);
+    expect(find.text('51.00 cm'), findsOneWidget);
   });
 
   testWidgets('registration rejects a display name entered as an email', (
