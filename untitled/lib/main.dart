@@ -14,8 +14,8 @@ Future<void> main() async {
     persistenceEnabled: true,
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
-  await reminderNotificationService.initialize();
-  if (reminderNotificationService.isSupported) {
+  final remindersReady = await reminderNotificationService.initialize();
+  if (remindersReady) {
     for (final reminder in await ReminderRepository().load()) {
       if (reminder.enabled) {
         await reminderNotificationService.schedule(reminder);

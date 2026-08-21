@@ -14,11 +14,13 @@ class ReminderNotificationService {
   ReminderNotificationService(this._notifications);
 
   final FlutterLocalNotificationsPlugin _notifications;
+  bool _initialized = false;
 
   bool get isSupported =>
       !kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.android ||
           defaultTargetPlatform == TargetPlatform.iOS);
+  bool get isReady => isSupported && _initialized;
 
   static const _androidDetails = AndroidNotificationDetails(
     'audible_care_reminders',
@@ -32,26 +34,33 @@ class ReminderNotificationService {
     enableVibration: true,
   );
 
-  Future<void> initialize() async {
-    if (!isSupported) return;
-    timezone_data.initializeTimeZones();
-    final localTimezone = await FlutterTimezone.getLocalTimezone();
-    timezone.setLocalLocation(timezone.getLocation(localTimezone));
+  Future<bool> initialize() async {
+    if (!isSupported) return false;
+    try {
+      timezone_data.initializeTimeZones();
+      final localTimezone = await FlutterTimezone.getLocalTimezone();
+      timezone.setLocalLocation(timezone.getLocation(localTimezone));
 
-    await _notifications.initialize(
-      const InitializationSettings(
-        android: AndroidInitializationSettings('@drawable/notification_icon'),
-        iOS: DarwinInitializationSettings(
-          requestAlertPermission: false,
-          requestBadgePermission: false,
-          requestSoundPermission: false,
-        ),
-      ),
-    );
+      _initialized = await _notifications.initialize(
+            const InitializationSettings(
+              android: AndroidInitializationSettings('notification_icon'),
+              iOS: DarwinInitializationSettings(
+                requestAlertPermission: false,
+                requestBadgePermission: false,
+                requestSoundPermission: false,
+              ),
+            ),
+          ) ??
+          false;
+    } on Exception catch (error) {
+      _initialized = false;
+      debugPrint('Care reminder notifications could not initialize: $error');
+    }
+    return _initialized;
   }
 
   Future<bool> requestPermission() async {
-    if (!isSupported) return false;
+    if (!isReady) return false;
     final android = _notifications.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     final notificationsAllowed =
@@ -70,7 +79,7 @@ class ReminderNotificationService {
   }
 
   Future<void> schedule(CareReminder reminder) async {
-    if (!isSupported) return;
+    if (!isReady) return;
     final now = timezone.TZDateTime.now(timezone.local);
     var next = timezone.TZDateTime(
       timezone.local,
@@ -101,6 +110,6 @@ class ReminderNotificationService {
   }
 
   Future<void> cancel(int id) async {
-    if (isSupported) await _notifications.cancel(id);
+    if (isReady) await _notifications.cancel(id);
   }
 }
